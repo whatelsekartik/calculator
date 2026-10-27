@@ -5,7 +5,7 @@
  */
 
 import {
-  Value, VarName, Fraction, intVal, cleanFloat,
+  Value, VarName, Fraction, intVal, numVal, cleanFloat,
 } from "./core";
 import { Tok, tok, tokenize } from "./parser";
 import { DisplaySettings, DEFAULT_DISPLAY, valueToText, realToNodes, dmsNodes } from "./format";
@@ -13,6 +13,8 @@ import { DNode } from "./display";
 import { calculate, EngineEnv } from "./engine";
 import { evalBaseN, formatBase, Radix } from "./basen";
 import { KEY_BY_ID, KeyEffect } from "./keymap";
+import { getCalculatorPersistence } from "./persistence";
+import { solveNewton } from "./solvers";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -23,18 +25,14 @@ export type ModeId =
   | "stats" | "table" | "equation" | "ineq" | "dist" | "ratio" | "mathbox";
 
 export const MODES: { id: ModeId; name: string }[] = [
-  { id: "calc", name: "Calculate" },
-  { id: "complex", name: "Complex" },
-  { id: "basen", name: "Base-N" },
-  { id: "matrix", name: "Matrix" },
-  { id: "vector", name: "Vector" },
-  { id: "stats", name: "Statistics" },
-  { id: "table", name: "Table" },
-  { id: "equation", name: "Equation" },
-  { id: "ineq", name: "Inequality" },
-  { id: "dist", name: "Distribution" },
-  { id: "ratio", name: "Ratio" },
-  { id: "mathbox", name: "Math Box" },
+  { id: "calc", name: "COMP" },
+  { id: "complex", name: "CMPLX" },
+  { id: "stats", name: "STAT" },
+  { id: "basen", name: "BASE-N" },
+  { id: "equation", name: "EQN" },
+  { id: "matrix", name: "MATRIX" },
+  { id: "table", name: "TABLE" },
+  { id: "vector", name: "VECTOR" },
 ];
 
 /**
@@ -88,6 +86,7 @@ export interface CalcState {
   cursor: number;
   shift: boolean;
   alpha: boolean;
+  hypPending: boolean;
   settings: CalcSettings;
   vars: Record<string, Value | null>;
   ans: Value;
@@ -115,6 +114,7 @@ export function initialState(): CalcState {
     cursor: 0,
     shift: false,
     alpha: false,
+    hypPending: false,
     settings: DEFAULT_SETTINGS,
     vars: { ...EMPTY_VARS },
     ans: intVal(0),
@@ -248,7 +248,6 @@ const STORAGE_KEY = "campusplus.calculator.v1";
 
 export function saveState(s: CalcState): void {
   try {
-    if (typeof window === "undefined" || !window.localStorage) return;
     const p: Persisted = {
       settings: s.settings,
       vars: Object.fromEntries(Object.entries(s.vars).map(([k, v]) => [k, v ? serializeValue(v) : null])),
@@ -258,7 +257,7 @@ export function saveState(s: CalcState): void {
       matrices: s.matrices,
       vectors: s.vectors,
     };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+    getCalculatorPersistence().write(STORAGE_KEY, JSON.stringify(p));
   } catch {
     /* storage unavailable — run in-memory */
   }
@@ -266,8 +265,7 @@ export function saveState(s: CalcState): void {
 
 export function loadState(): Partial<CalcState> | null {
   try {
-    if (typeof window === "undefined" || !window.localStorage) return null;
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = getCalculatorPersistence().read(STORAGE_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw) as Persisted;
     return {
@@ -290,8 +288,7 @@ export function loadState(): Partial<CalcState> | null {
 
 export function clearPersisted(): void {
   try {
-    if (typeof window === "undefined" || !window.localStorage) return;
-    window.localStorage.removeItem(STORAGE_KEY);
+    getCalculatorPersistence().remove(STORAGE_KEY);
   } catch {
     /* ignore */
   }
@@ -477,6 +474,32 @@ export function execute(s: CalcState): CalcState {
   });
 }
 
+/** Newton solve for the current expression f(X)=0, using the remembered X
+ * value or a conventional initial estimate of one. */
+function solveExpression(s: CalcState): CalcState {
+  if (!s.tokens.some((t) => t.t === "var" && t.s === "X")) {
+    return bump({ ...s, error: { code: "VARIABLE", message: "SOLVE needs an expression containing X", position: null }, result: null });
+  }
+  const tokens = balanceTokens(s.tokens);
+  try {
+    const solve = solveNewton((x) => {
+      const env = engineEnv(s);
+      env.vars = { ...env.vars, X: numVal(x) };
+      const out = calculate(shapeTokens(tokens), env);
+      if (!out.ok || out.value.kind !== "num") throw new Error(out.ok ? "Real equation required" : out.message);
+      return out.value.real;
+    }, s.vars.X?.kind === "num" ? s.vars.X.real : 1);
+    if (!solve.converged || !Number.isFinite(solve.root)) throw new Error("No numeric solution found from current X");
+    const value = numVal(cleanFloat(solve.root));
+    const text = valueToText(value, s.settings);
+    const result: ResultView = { value, text, hasAlt: false, showAlt: false, overrideNodes: null, overrideText: null };
+    const entry: HistoryEntry = { id: historySeq++, exprText: `${tokensToSource(tokens)} = 0`, toks: tokens, resultText: text, result: value, mode: s.mode, ts: Date.now() };
+    return bump({ ...s, tokens, result, error: null, ans: value, vars: { ...s.vars, X: value, Ans: value }, history: [entry, ...s.history].slice(0, 50), flash: `SOLVE · ${solve.iterations} iterations` });
+  } catch (error) {
+    return bump({ ...s, error: { code: "MATH", message: error instanceof Error ? error.message : "SOLVE failed", position: null }, result: null });
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* main key reducer                                                    */
 /* ------------------------------------------------------------------ */
@@ -490,13 +513,14 @@ export function pressKey(state: CalcState, keyId: string): CalcState {
 
   // nav & control keys (not layered)
   switch (keyId) {
-    case "nav-left": return navLeft(s);
-    case "nav-right": return navRight(s);
-    case "nav-up": return replay(s, -1);
-    case "nav-down": return replay(s, 1);
+    case "nav-left": return consumeModifiers(navLeft({ ...s, hypPending: false }));
+    case "nav-right": return consumeModifiers(navRight({ ...s, hypPending: false }));
+    case "nav-up": return consumeModifiers(replay({ ...s, hypPending: false }, -1));
+    case "nav-down": return consumeModifiers(replay({ ...s, hypPending: false }, 1));
     case "ok":
     case "exe": return consumeModifiers(execute(s));
     case "format": {
+      if (s.shift || s.alpha) break; // SHIFT layer may use S↔D as a different action
       if (!s.result || !s.result.hasAlt) return s;
       return bump({ ...s, result: { ...s.result, showAlt: !s.result.showAlt } });
     }
@@ -514,6 +538,19 @@ export function pressKey(state: CalcState, keyId: string): CalcState {
   else if (s.shift && def.shift) effect = def.shift;
   else effect = def.base;
   if (!effect) return consumeModifiers(s);
+
+  // HYP is a one-key prefix: HYP+sin/cos/tan and SHIFT+HYP+trig resolve to
+  // the corresponding hyperbolic / inverse-hyperbolic function.
+  if (s.hypPending) {
+    if (effect.kind === "insertFn") {
+      const hypNames: Record<string, string> = {
+        sin: s.shift ? "asinh" : "sinh", cos: s.shift ? "acosh" : "cosh", tan: s.shift ? "atanh" : "tanh",
+        asin: "asinh", acos: "acosh", atan: "atanh",
+      };
+      if (hypNames[effect.name]) effect = { ...effect, name: hypNames[effect.name] };
+    }
+    s = { ...s, hypPending: false };
+  }
 
   // STO capture: a variable key press while stoPending stores into the variable
   if (s.stoPending) {
@@ -551,7 +588,7 @@ const consumeModifiers = (s: CalcState): CalcState =>
   s.shift || s.alpha ? bump({ ...s, shift: false, alpha: false }) : s;
 
 function buildFnTokens(name: string): Tok[] {
-  const twoArg = ["logb", "xroot", "ranint", "pol", "rec", "dot", "cross", "vangle"];
+  const twoArg = ["logb", "xroot", "ranint", "pol", "rec", "diff", "dot", "cross", "vangle"];
   if (name === "ran#") return [tok("func", name)];
   if (twoArg.includes(name)) {
     // skeleton: name(□,□) with cursor after '('; )/,-skip moves past comma
@@ -678,6 +715,33 @@ function runAction(s: CalcState, action: string): CalcState {
         flash: "Variables & matrices cleared",
       });
     }
+    case "hyp":
+      return bump({ ...s, hypPending: !s.hypPending, shift: false, alpha: false, flash: s.hypPending ? null : "HYP" });
+    case "calc":
+      return execute({ ...s, shift: false, alpha: false });
+    case "solve":
+      return solveExpression(s);
+    case "rcl":
+      return bump({ ...s, flash: "RCL → press ALPHA and a variable" });
+    case "eng":
+    case "eng-left":
+      return bump({ ...s, settings: { ...s.settings, eng: !s.settings.eng }, flash: s.settings.eng ? "NORM" : "ENG" });
+    case "mplus":
+    case "mminus": {
+      let value = s.result?.value ?? null;
+      if (!value && s.tokens.length) {
+        const out = calculate(shapeTokens(s.tokens), engineEnv(s));
+        if (out.ok) value = out.value;
+      }
+      if (!value || value.kind !== "num") return bump({ ...s, flash: "M memory needs a real number" });
+      const old = s.vars.M?.kind === "num" ? s.vars.M.real : 0;
+      const next = old + (action === "mminus" ? -value.real : value.real);
+      return bump({ ...s, vars: { ...s.vars, M: numVal(cleanFloat(next)) }, flash: `M = ${cleanFloat(next)}` });
+    }
+    case "insert-mode":
+      return bump({ ...s, flash: "Move cursor, then enter text" });
+    case "off":
+      return runAction(s, "ac");
     case "dms-conv": {
       if (!s.result) return s;
       const v = s.result.value;

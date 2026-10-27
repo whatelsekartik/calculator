@@ -38,10 +38,9 @@ export default function HomePage() {
               <ArrowRight size={16} className="text-indigo-600 transition group-hover:translate-x-0.5" aria-hidden />
             </h2>
             <p className="mt-1.5 text-sm leading-6 text-slate-600">
-              SCW-100 ClassWiz-style simulator: exact fractions, trig modes, complex
-              numbers, matrices, vectors, equation solving, statistics, Base-N logic,
-              distributions and function tables — with a working physical keypad and
-              natural textbook display.
+              fx-991ES PLUS 2nd edition-style simulator: exact fractions, trig, complex
+              arithmetic, matrices, vectors, equation solving, statistics and Base-N —
+              with a working physical keypad and natural textbook display.
             </p>
             <p className="mt-3 text-xs font-semibold text-indigo-700">
               No sign-in needed · runs offline in the browser
