@@ -30,7 +30,7 @@ describe("typing & evaluation", () => {
     expect(resultReal(s)).toBe(2000);
   });
   it("percent through SHIFT layer: 200×10% = 20", () => {
-    const s = typeKeys(initialState(), ["d2", "d0", "d0", "mul", "d1", "d0", "shift", "fact", "exe"]);
+    const s = typeKeys(initialState(), ["d2", "d0", "d0", "mul", "d1", "d0", "shift", "eng", "exe"]);
     expect(resultReal(s)).toBe(20);
   });
   it("skeleton 2-arg insert: SHIFT+pow (xroot) 3 , 27 with skip → 3", () => {
@@ -82,14 +82,15 @@ describe("cursor & editing", () => {
     expect(s.vars.A).not.toBeNull(); // AC must not clear variables
     expect(resultRealFromAns(s)).toBe(42);
   });
-  it("CLR ALL (SHIFT+AC) clears variables", () => {
+  it("SHIFT+AC behaves as OFF and does not erase stored variables", () => {
     let s = typeKeys(initialState(), ["d9", "exe"]);
     s = pressKey(s, "sto");
     s = pressKey(s, "alpha");
     s = pressKey(s, "neg");
     s = typeKeys(s, ["shift", "ac"]);
-    expect(s.vars.A).toBeNull();
-    expect(asReal(s.ans)).toBe(0);
+    expect(s.vars.A).not.toBeNull();
+    expect(asReal(s.ans)).toBe(9);
+    expect(src(s)).toBe("");
   });
   it("syntax error position jump with ◀", () => {
     let s = typeKeys(initialState(), ["d1", "add", "mul", "d2", "exe"]);

@@ -109,6 +109,8 @@ export function ScientificCalculator() {
   }), [press]);
 
   const onMetal = useCallback((action: "menu" | "settings" | "catalog" | "tools" | "back" | "help") => {
+    // MODE/SETUP consumes the physical SHIFT modifier after opening its panel.
+    setState((s) => s.shift ? pressKey(s, "shift") : s.alpha ? pressKey(s, "alpha") : s);
     if (action === "back") {
       setOverlay((o) => {
         if (o !== null) return null;
@@ -305,12 +307,12 @@ export function ScientificCalculator() {
       {/* upper metallic shell */}
       <div className="calc-shell-top">
         <div className="calc-brandrow">
-          <div className="calc-solar" role="img" aria-label="Solar panel (decorative)" />
           <div className="calc-brand">
             <div className="calc-brand-name">CAMPUS+</div>
-            <div className="calc-brand-model">SCW-100 SCIENTIFIC</div>
-            <div className="calc-brand-sub">TEXTBOOK DISPLAY · 12 APPS</div>
+            <div className="calc-brand-model">fx-991ES PLUS · STYLE</div>
+            <div className="calc-brand-sub">NATURAL-V.P.A.M. DISPLAY</div>
           </div>
+          <div className="calc-solar" role="img" aria-label="Solar panel (decorative)" />
         </div>
         <CalculatorScreen state={state} overlay={overlayNode} />
       </div>
@@ -319,7 +321,7 @@ export function ScientificCalculator() {
       {baseStrip}
 
       {/* mode chips */}
-      {!editorActive || state.mode === "matrix" || state.mode === "vector" || state.mode === "basen" || state.mode === "complex" ? (
+      {state.mode === "matrix" || state.mode === "vector" || state.mode === "basen" || state.mode === "complex" ? (
         <div style={{ display: "flex", gap: 6, padding: "10px 4px 0", flexWrap: "wrap" }}>
           {(state.mode === "complex" || state.mode === "matrix" || state.mode === "vector" || state.mode === "basen") && chips.map((c2) => (
             <button

@@ -31,7 +31,7 @@ function clickKey(aria: string) {
   const el = container.querySelector<HTMLButtonElement>(`[aria-label="${aria}"]`);
   if (!el) throw new Error(`key not found: ${aria}`);
   act(() => {
-    el.dispatchEvent(new Event("pointerdown", { bubbles: true, cancelable: true }));
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
   });
 }
 
@@ -55,7 +55,7 @@ describe("on-screen keypad → screen", () => {
   });
 
   it("unclosed parens auto-close at EXE: √(81)=9", () => {
-    ["Square root", "Eight", "One", "Execute calculation"].forEach(clickKey);
+    ["Square root template", "Eight", "One", "Execute calculation"].forEach(clickKey);
     expect(resultText()).toBe("9");
   });
 
@@ -79,7 +79,7 @@ describe("on-screen keypad → screen", () => {
   it("FMT toggles fraction ⇔ decimal", () => {
     ["One", "Divide", "Three", "Execute calculation"].forEach(clickKey);
     expect(container.querySelector(".calc-resultline .dn-frac")).not.toBeNull();
-    clickKey("Format: toggle result between standard and decimal");
+    clickKey("Toggle exact fraction and decimal display");
     expect(resultText()).toContain("0.333");
   });
 
@@ -96,15 +96,25 @@ describe("on-screen keypad → screen", () => {
     expect(resultText()).not.toContain("Math ERROR");
     clickKey("Cursor up");
     expect(inputText()).toContain("7×8");
-    clickKey("OK / Execute");
+    clickKey("Execute calculation");
     expect(resultText()).toBe("56");
   });
 
+  it("MODE selects a supported app and SHIFT+MODE opens SETUP", () => {
+    clickKey("Mode / Setup");
+    pressKeyboard("2");
+    expect(container.querySelector(".calc-statusrow")?.textContent).toContain("CMPLX");
+    clickKey("Shift: access yellow secondary functions");
+    clickKey("Mode / Setup");
+    expect(container.querySelector(".calc-overlay")?.textContent).toContain("SETTINGS");
+    pressKeyboard("Escape");
+    expect(container.querySelector(".calc-overlay")).toBeNull();
+  });
+
   it("typing into a native input inside overlays is not hijacked", () => {
-    clickKey("Home: app menu");
+    clickKey("Mode / Setup");
     const menu = container.querySelector(".calc-overlay");
     expect(menu).not.toBeNull();
-    // Escape closes
     pressKeyboard("Escape");
     expect(container.querySelector(".calc-overlay")).toBeNull();
   });

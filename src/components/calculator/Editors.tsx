@@ -278,7 +278,7 @@ export function StatsEditor({
   const [model, setModel] = useState<RegressionModel>("linear");
   const [estIn, setEstIn] = useState("");
 
-  const parsed = useMemo((): { rows: DataRow[]; error: string | null } => {
+  const parsed: { rows: DataRow[]; error: string | null } = (() => {
     const rows: DataRow[] = [];
     for (const r of data.rows) {
       if (r.x.trim() === "" && r.y.trim() === "") continue;
@@ -292,7 +292,7 @@ export function StatsEditor({
     }
     if (rows.length === 0) return { rows: [], error: "Enter at least one row" };
     return { rows, error: null };
-  }, [data]);
+  })();
 
   const setRow = (i: number, patch: Partial<{ x: string; y: string; f: string }>) => {
     onData({ ...data, rows: data.rows.map((r, k) => (k === i ? { ...r, ...patch } : r)) });

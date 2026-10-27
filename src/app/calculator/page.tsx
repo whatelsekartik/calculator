@@ -6,7 +6,7 @@ import ScientificCalculator from "@/components/calculator/CalculatorLoader";
 export const metadata: Metadata = {
   title: "Scientific Calculator — Campus+",
   description:
-    "Campus+ SCW-100: a ClassWiz-inspired scientific calculator — fractions, trig, complex numbers, matrices, vectors, equations, statistics, distributions, Base-N and more. Runs fully in your browser.",
+    "A Campus+ fx-991ES PLUS-style scientific calculator with natural textbook display, fractions, trigonometry, complex numbers, matrices, vectors, equations, statistics, Base-N, and more. Runs in your browser."
 };
 
 export default function CalculatorPage() {
@@ -52,12 +52,12 @@ export default function CalculatorPage() {
               Campus+ Utilities
             </p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-              SCW-100 Scientific Calculator
+              Natural-V.P.A.M. Scientific Calculator
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              A faithful physical-calculator experience with natural textbook display:
-              stacked fractions, radicals and exponents, a movable editing cursor,
-              replay history, and twelve working calculation apps.
+              A Campus+ recreation of the fx-991ES PLUS 2nd edition&apos;s physical
+              arrangement, with textbook fractions and roots, a movable cursor,
+              replay history, and eight calculator modes. Calculations stay on-device.
             </p>
           </div>
 
@@ -67,18 +67,14 @@ export default function CalculatorPage() {
               Apps on this unit
             </h2>
             <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
-              <li>Calculate — exact fractions</li>
-              <li>Complex — a+bi / r∠θ</li>
-              <li>Base-N — HEX/BIN/OCT/DEC</li>
-              <li>Matrix — det, inverse, ×</li>
-              <li>Vector — dot &amp; cross</li>
-              <li>Statistics — regressions</li>
-              <li>Distribution — N, Bin, Po</li>
-              <li>Table — f(x), g(x) values</li>
-              <li>Equation — up to x⁴</li>
-              <li>Inequality — intervals</li>
-              <li>Ratio — A:B = C:X</li>
-              <li>Math Box — dice &amp; coins</li>
+              <li>COMP — exact fractions, trig, calculus</li>
+              <li>CMPLX — rectangular / polar arithmetic</li>
+              <li>STAT — data and regression tools</li>
+              <li>BASE-N — binary, octal, decimal, hex</li>
+              <li>EQN — polynomial / simultaneous systems</li>
+              <li>MATRIX — dimensions, products, inverse</li>
+              <li>TABLE — evaluate functions over ranges</li>
+              <li>VECTOR — magnitude, dot, cross products</li>
             </ul>
           </div>
 
@@ -88,17 +84,17 @@ export default function CalculatorPage() {
               Quick keys
             </h2>
             <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
-              <li><b>HOME</b> app menu · <b>CTLG</b> functions, constants &amp; unit conversions</li>
-              <li><b>SHIFT+(</b> stores into a variable (STO) · <b>ALPHA+letter</b> recalls it</li>
-              <li>▲▼ replay history · <b>FMT</b> toggles fraction ⇔ decimal</li>
-              <li>SHIFT+°′″ converts a result to degrees-minutes-seconds</li>
-              <li>Keyboard: digits, operators, Enter=EXE, Backspace, Esc=AC</li>
+              <li><b>MODE</b> selects COMP, CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE or VECTOR.</li>
+              <li><b>SHIFT + MODE</b> opens setup · <b>ALPHA + letter</b> inserts variables.</li>
+              <li>▲▼ replays history · <b>S⇔D</b> toggles fraction ⇔ decimal.</li>
+              <li><b>CALC</b> evaluates with current variable values · <b>∫</b> opens an integral template.</li>
+              <li>Keyboard: digits/operators, Enter, arrows, Backspace, Esc.</li>
             </ul>
           </div>
 
           <p className="text-xs leading-5 text-slate-400">
-            Independently built by Campus+. Inspired by ClassWiz-series devices;
-            not affiliated with or endorsed by Casio. All state stays in your browser.
+            Independently built by Campus+ as an fx-991ES PLUS-style recreation;
+            not affiliated with or endorsed by Casio. Calculations and saved state stay in your browser.
           </p>
         </aside>
       </div>

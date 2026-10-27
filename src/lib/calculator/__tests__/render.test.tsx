@@ -32,14 +32,17 @@ const act: CalcActions = {
 };
 
 describe("calculation display rendering", () => {
-  it("device shell renders with all 35 keys + cluster", () => {
+  it("device shell renders all 40 physical key positions in model row lengths", () => {
     const html = renderToString(createElement(ScientificCalculator));
     expect(html).toContain("calc-device");
     expect(html).toContain("calc-screen");
-    expect(html).toContain("EXE");
+    expect(html).toContain("data-key-id=\"exe\"");
     expect(html).toContain("SHIFT");
-    expect(html).toContain("×10^");
+    expect(html).toContain("×10ˣ");
     expect(html).toContain("CAMPUS+");
+    expect((html.match(/data-key-id=/g) || []).length).toBe(40);
+    expect((html.match(/calc-scientific-row/g) || []).length).toBe(3);
+    expect((html.match(/calc-number-row/g) || []).length).toBe(4);
   });
 
   it("screen renders input with cursor and stacked fraction", () => {
@@ -93,11 +96,13 @@ describe("calculation display rendering", () => {
 
 describe("overlays and editors render", () => {
   const st = typeKeys(initialState(), ["d2", "add", "d2", "exe"]);
-  it("HOME menu lists all 12 apps", () => {
+  it("MODE menu lists the reference unit's eight implemented modes", () => {
     const html = renderToString(createElement(HomeMenu, { act, onClose: noop }));
-    expect(html).toContain("Calculate");
-    expect(html).toContain("Math Box");
-    expect((html.match(/calc-mcell/g) || []).length).toBe(12);
+    expect(html).toContain("COMP");
+    expect(html).toContain("CMPLX");
+    expect(html).toContain("BASE-N");
+    expect(html).toContain("VECTOR");
+    expect((html.match(/calc-mcell/g) || []).length).toBe(8);
   });
   it("settings panel", () => {
     const html = renderToString(createElement(SettingsPanel, { state: st, act, onClose: noop }));
