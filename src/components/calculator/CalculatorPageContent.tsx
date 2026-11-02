@@ -39,9 +39,7 @@ export default function CalculatorPageContent() {
               Natural-V.P.A.M. Scientific Calculator
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              A Campus+ recreation of the fx-991ES PLUS 2nd edition&apos;s physical
-              arrangement, with textbook fractions and roots, a movable cursor,
-              replay history, and eight calculator modes. Calculations stay on-device.
+              An independently built scientific calculator inspired by the fx-991ES PLUS 2nd edition layout, with natural textbook notation, a movable cursor, replay history, and dedicated scientific modes. Calculations stay on-device.
             </p>
           </div>
 
