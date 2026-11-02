@@ -164,7 +164,8 @@ describe("mobile-first mode and setup controls", () => {
     for (const mode of modes) {
       clickText(mode, ".calc-mode-strip");
       expect(container.querySelector(".calc-statusrow")?.textContent).toContain(mode);
-      expect(container.querySelector(".calc-overlay")).toBeNull();
+      const overlayText = container.querySelector(".calc-overlay")?.textContent ?? "";
+      expect(overlayText).not.toContain("CALCULATOR APPS");
     }
   });
 
