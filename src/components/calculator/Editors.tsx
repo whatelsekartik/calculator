@@ -506,9 +506,15 @@ export function TableEditor({
         setRows(null);
         return;
       }
-      const start = Number(cfg.start);
-      const end = Number(cfg.end);
-      const step = Number(cfg.step);
+      const readBound = (label: string, raw: string): number => {
+        if (raw.trim() === "") throw new Error(`${label} is required`);
+        const value = Number(raw);
+        if (!Number.isFinite(value)) throw new Error(`${label} must be a finite number`);
+        return value;
+      };
+      const start = readBound("Start", cfg.start);
+      const end = readBound("End", cfg.end);
+      const step = readBound("Step", cfg.step);
       const f = compileFunction(cfg.f, { ...state.vars }, state.settings.angle);
       const g = cfg.g.trim() !== "" ? compileFunction(cfg.g, { ...state.vars }, state.settings.angle) : null;
       const r = tableValues(f, g, start, end, step);
