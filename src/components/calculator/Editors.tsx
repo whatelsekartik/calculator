@@ -27,7 +27,7 @@ function Header({ title, onClose }: { title: string; onClose: () => void }) {
     <div className="calc-overlay-head">
       <span>{title}</span>
       <span style={{ flex: 1 }} />
-      <button type="button" className="closex" aria-label="Back to calculation" onPointerDown={(e) => { e.preventDefault(); onClose(); }}>
+      <button type="button" className="closex" aria-label="Back to calculation" onClick={(e) => { e.preventDefault(); onClose(); }}>
         <X size={11} strokeWidth={3} aria-hidden />
       </button>
     </div>
@@ -109,7 +109,7 @@ export function MatrixEditor({
         <div className="calc-tabrow">
           {["MatA", "MatB", "MatC", "MatD"].map((n) => (
             <button key={n} type="button" className={`calc-tab ${name === n ? "on" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); selectName(n); }}>
+              onClick={(e) => { e.preventDefault(); selectName(n); }}>
               {n}{state.matrices[n] ? "" : " ∅"}
             </button>
           ))}
@@ -148,11 +148,11 @@ export function MatrixEditor({
         </div>
         {err && <p className="calc-note" role="alert">{err}</p>}
         <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); save(); }}>
+          <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); save(); }}>
             Save {name}
           </button>
           <button type="button" className="calc-mini-btn" aria-label={`Delete ${name}`}
-            onPointerDown={(e) => { e.preventDefault(); onSave(name, null); onClose(); }}>
+            onClick={(e) => { e.preventDefault(); onSave(name, null); onClose(); }}>
             Delete
           </button>
         </div>
@@ -209,7 +209,7 @@ export function VectorEditor({
         <div className="calc-tabrow">
           {["VctA", "VctB", "VctC", "VctD"].map((n) => (
             <button key={n} type="button" className={`calc-tab ${name === n ? "on" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); selectName(n); }}>
+              onClick={(e) => { e.preventDefault(); selectName(n); }}>
               {n}{state.vectors[n] ? "" : " ∅"}
             </button>
           ))}
@@ -219,7 +219,7 @@ export function VectorEditor({
           <span>
             {[2, 3].map((d) => (
               <button key={d} type="button" className={`calc-tab ${dim === d ? "on" : ""}`}
-                onPointerDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   setDim(d);
                   setCells(Array.from({ length: d }, (_, i) => cells[i] ?? "0"));
@@ -241,9 +241,9 @@ export function VectorEditor({
         </div>
         {err && <p className="calc-note" role="alert">{err}</p>}
         <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); save(); }}>Save {name}</button>
+          <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); save(); }}>Save {name}</button>
           <button type="button" className="calc-mini-btn" aria-label={`Delete ${name}`}
-            onPointerDown={(e) => { e.preventDefault(); onSave(name, null); onClose(); }}>
+            onClick={(e) => { e.preventDefault(); onSave(name, null); onClose(); }}>
             Delete
           </button>
         </div>
@@ -322,16 +322,16 @@ export function StatsEditor({
       <div className="calc-overlay-body">
         <div className="calc-tabrow">
           <button type="button" className={`calc-tab ${view === "edit" ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); setView("edit"); }}>Data</button>
+            onClick={(e) => { e.preventDefault(); setView("edit"); }}>Data</button>
           <button type="button" className={`calc-tab ${view === "result" ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); setView("result"); }}>Results</button>
+            onClick={(e) => { e.preventDefault(); setView("result"); }}>Results</button>
           <span style={{ flex: 1 }} />
           <button type="button" className={`calc-tab ${!data.twoVar ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); onData({ ...data, twoVar: false }); }}>1-var</button>
+            onClick={(e) => { e.preventDefault(); onData({ ...data, twoVar: false }); }}>1-var</button>
           <button type="button" className={`calc-tab ${data.twoVar ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); onData({ ...data, twoVar: true }); }}>2-var</button>
+            onClick={(e) => { e.preventDefault(); onData({ ...data, twoVar: true }); }}>2-var</button>
           <button type="button" className={`calc-tab ${data.freqOn ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); onData({ ...data, freqOn: !data.freqOn }); }}>Freq</button>
+            onClick={(e) => { e.preventDefault(); onData({ ...data, freqOn: !data.freqOn }); }}>Freq</button>
         </div>
 
         {view === "edit" && (
@@ -362,7 +362,7 @@ export function StatsEditor({
                       onChange={(e) => setRow(i, { f: e.target.value })} />
                   )}
                   <button type="button" className="calc-mini-btn" aria-label={`Delete row ${i + 1}`}
-                    onPointerDown={(e) => {
+                    onClick={(e) => {
                       e.preventDefault();
                       onData({ ...data, rows: data.rows.filter((_, k) => k !== i) });
                     }}>
@@ -375,14 +375,14 @@ export function StatsEditor({
             <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
               <button type="button" className="calc-mini-btn"
                 disabled={data.rows.length >= 80}
-                onPointerDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   onData({ ...data, rows: [...data.rows, { x: "", y: "", f: "1" }] });
                 }}>
                 + row
               </button>
               <button type="button" className="calc-mini-btn" aria-label="Reset data"
-                onPointerDown={(e) => { e.preventDefault(); onData(emptyStats()); }}>
+                onClick={(e) => { e.preventDefault(); onData(emptyStats()); }}>
                 Reset
               </button>
             </div>
@@ -435,7 +435,7 @@ export function StatsEditor({
             <div className="calc-tabrow">
               {(Object.keys(REGRESSION_FORMS) as RegressionModel[]).map((m) => (
                 <button key={m} type="button" className={`calc-tab ${model === m ? "on" : ""}`}
-                  onPointerDown={(e) => { e.preventDefault(); setModel(m); }}>
+                  onClick={(e) => { e.preventDefault(); setModel(m); }}>
                   {m}
                 </button>
               ))}
@@ -543,7 +543,7 @@ export function TableEditor({
           <span className="flabel">Step</span>
           <input type="number" value={cfg.step} onChange={(e) => onCfg({ ...cfg, step: e.target.value })} aria-label="Step" />
         </div>
-        <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); generate(); }}>
+        <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); generate(); }}>
           Generate table
         </button>
         {err && <p className="calc-note" role="alert">{err}</p>}
@@ -665,9 +665,9 @@ export function EquationEditor({ state, onClose }: { state: CalcState; onClose: 
       <Header title="EQUATION / FUNC" onClose={onClose} />
       <div className="calc-overlay-body">
         <div className="calc-tabrow">
-          <button type="button" className={`calc-tab ${tab === "simul" ? "on" : ""}`} onPointerDown={(e) => { e.preventDefault(); setTab("simul"); setOut(null); }}>Simul</button>
-          <button type="button" className={`calc-tab ${tab === "poly" ? "on" : ""}`} onPointerDown={(e) => { e.preventDefault(); setTab("poly"); setOut(null); }}>Polynomial</button>
-          <button type="button" className={`calc-tab ${tab === "solve" ? "on" : ""}`} onPointerDown={(e) => { e.preventDefault(); setTab("solve"); setOut(null); }}>Solver</button>
+          <button type="button" className={`calc-tab ${tab === "simul" ? "on" : ""}`} onClick={(e) => { e.preventDefault(); setTab("simul"); setOut(null); }}>Simul</button>
+          <button type="button" className={`calc-tab ${tab === "poly" ? "on" : ""}`} onClick={(e) => { e.preventDefault(); setTab("poly"); setOut(null); }}>Polynomial</button>
+          <button type="button" className={`calc-tab ${tab === "solve" ? "on" : ""}`} onClick={(e) => { e.preventDefault(); setTab("solve"); setOut(null); }}>Solver</button>
         </div>
 
         {tab === "simul" && (
@@ -677,7 +677,7 @@ export function EquationEditor({ state, onClose }: { state: CalcState; onClose: 
               <span>
                 {[2, 3, 4].map((k) => (
                   <button key={k} type="button" className={`calc-tab ${n === k ? "on" : ""}`}
-                    onPointerDown={(e) => { e.preventDefault(); setN(k); setCoef(Array(20).fill("")); setOut(null); }}>
+                    onClick={(e) => { e.preventDefault(); setN(k); setCoef(Array(20).fill("")); setOut(null); }}>
                     {k}
                   </button>
                 ))}
@@ -709,7 +709,7 @@ export function EquationEditor({ state, onClose }: { state: CalcState; onClose: 
               </div>
             ))}
             <button type="button" className="calc-mini-btn" style={{ marginTop: 6 }}
-              onPointerDown={(e) => { e.preventDefault(); runSimul(); }}>Solve</button>
+              onClick={(e) => { e.preventDefault(); runSimul(); }}>Solve</button>
           </>
         )}
 
@@ -720,7 +720,7 @@ export function EquationEditor({ state, onClose }: { state: CalcState; onClose: 
               <span>
                 {[2, 3, 4].map((k) => (
                   <button key={k} type="button" className={`calc-tab ${deg === k ? "on" : ""}`}
-                    onPointerDown={(e) => { e.preventDefault(); setDeg(k); setCoef(Array(20).fill("")); setOut(null); }}>
+                    onClick={(e) => { e.preventDefault(); setDeg(k); setCoef(Array(20).fill("")); setOut(null); }}>
                     {k}
                   </button>
                 ))}
@@ -743,7 +743,7 @@ export function EquationEditor({ state, onClose }: { state: CalcState; onClose: 
             </div>
             <p className="calc-note">degree-4 roots via Durand–Kerner iteration (numeric)</p>
             <button type="button" className="calc-mini-btn" style={{ marginTop: 6 }}
-              onPointerDown={(e) => { e.preventDefault(); runPoly(); }}>Solve</button>
+              onClick={(e) => { e.preventDefault(); runPoly(); }}>Solve</button>
           </>
         )}
 
@@ -757,7 +757,7 @@ export function EquationEditor({ state, onClose }: { state: CalcState; onClose: 
               <span className="flabel">initial x₀</span>
               <input type="number" value={solveX0} onChange={(e) => setSolveX0(e.target.value)} aria-label="initial x" />
             </div>
-            <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); runSolve(); }}>Solve</button>
+            <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); runSolve(); }}>Solve</button>
             <p className="calc-note">Numeric Newton solve — reports when convergence fails.</p>
             {out === null && (
               <button type="button" className="calc-mini-btn" aria-label="Store root to X"
@@ -834,7 +834,7 @@ export function IneqEditor({ state, onClose }: { state: CalcState; onClose: () =
           <span>
             {([1, 2, 3] as const).map((k) => (
               <button key={k} type="button" className={`calc-tab ${deg === k ? "on" : ""}`}
-                onPointerDown={(e) => { e.preventDefault(); setDeg(k); setOut(null); }}>
+                onClick={(e) => { e.preventDefault(); setDeg(k); setOut(null); }}>
                 {k}
               </button>
             ))}
@@ -845,7 +845,7 @@ export function IneqEditor({ state, onClose }: { state: CalcState; onClose: () =
           <span>
             {([">", ">=", "<", "<="] as IneqSense[]).map((k) => (
               <button key={k} type="button" className={`calc-tab ${sense === k ? "on" : ""}`}
-                onPointerDown={(e) => { e.preventDefault(); setSense(k); setOut(null); }}>
+                onClick={(e) => { e.preventDefault(); setSense(k); setOut(null); }}>
                 {k === ">=" ? "≥" : k === "<=" ? "≤" : k}
               </button>
             ))}
@@ -863,7 +863,7 @@ export function IneqEditor({ state, onClose }: { state: CalcState; onClose: () =
           ))}
         </div>
         <p className="calc-note">{"abcd".slice(0, deg + 1)} — coefficients of x^{deg}…x⁰</p>
-        <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); run(); }}>Solve</button>
+        <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); run(); }}>Solve</button>
         {out && (
           <div style={{ marginTop: 8, borderTop: "1.5px solid currentColor", paddingTop: 4 }}>
             {out.map((line, i) => (
@@ -919,7 +919,7 @@ export function DistEditor({ state, onClose }: { state: CalcState; onClose: () =
         <div className="calc-tabrow">
           {DIST_DEFS.map((d) => (
             <button key={d.id} type="button" className={`calc-tab ${id === d.id ? "on" : ""}`}
-              onPointerDown={(e) => {
+              onClick={(e) => {
                 e.preventDefault();
                 setId(d.id);
                 setVals(d.params.map((p) => p[1]));
@@ -942,7 +942,7 @@ export function DistEditor({ state, onClose }: { state: CalcState; onClose: () =
           </div>
         ))}
         <button type="button" className="calc-mini-btn" style={{ marginTop: 6 }}
-          onPointerDown={(e) => { e.preventDefault(); run(); }}>Calculate</button>
+          onClick={(e) => { e.preventDefault(); run(); }}>Calculate</button>
         {out && <div className="calc-stat-res" style={{ marginTop: 8 }}><span>{out}</span></div>}
         <p className="calc-note">Normal CDF via erf approximation (|ε| ≤ 1.5e-7); inverse via Acklam + Halley step.</p>
       </div>
@@ -990,7 +990,7 @@ export function RatioEditor({ state, onClose }: { state: CalcState; onClose: () 
             {([0, 1, 2, 3] as const).map((k) => (
               <button key={k} type="button" className={`calc-tab ${unk === k ? "on" : ""}`}
                 aria-label={`Solve for X at position ${"ABCD"[k]}`}
-                onPointerDown={(e) => { e.preventDefault(); setUnk(k); setOut(null); }}>
+                onClick={(e) => { e.preventDefault(); setUnk(k); setOut(null); }}>
                 {"ABCD"[k]}
               </button>
             ))}
@@ -1014,7 +1014,7 @@ export function RatioEditor({ state, onClose }: { state: CalcState; onClose: () 
             </span>
           ))}
         </div>
-        <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); run(); }}>Solve</button>
+        <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); run(); }}>Solve</button>
         {out && <div className="calc-stat-res" style={{ marginTop: 8 }}><span>{out}</span></div>}
       </div>
     </>
@@ -1035,18 +1035,18 @@ export function MathBoxEditor({ onClose }: { onClose: () => void }) {
       <div className="calc-overlay-body">
         <div className="calc-tabrow">
           <button type="button" className={`calc-tab ${kind === "dice" ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); setKind("dice"); }}>Dice</button>
+            onClick={(e) => { e.preventDefault(); setKind("dice"); }}>Dice</button>
           <button type="button" className={`calc-tab ${kind === "coin" ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); setKind("coin"); }}>Coin toss</button>
+            onClick={(e) => { e.preventDefault(); setKind("coin"); }}>Coin toss</button>
           {[1, 2, 3].map((k) => (
             <button key={k} type="button" className={`calc-tab ${count === k ? "on" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); setCount(k); }}>
+              onClick={(e) => { e.preventDefault(); setCount(k); }}>
               ×{k}
             </button>
           ))}
         </div>
         <button type="button" className="calc-mini-btn" style={{ fontSize: 13, padding: "6px 14px" }}
-          onPointerDown={(e) => {
+          onClick={(e) => {
             e.preventDefault();
             if (kind === "dice") {
               setOut(Array.from({ length: count }, () => 1 + Math.floor(Math.random() * 6)));
