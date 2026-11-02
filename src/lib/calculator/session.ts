@@ -484,6 +484,8 @@ export function execute(s: CalcState): CalcState {
       resultText: text + ` (${s.basenRadix.toUpperCase()})`,
       result: value,
       mode: s.mode,
+      settings: s.settings,
+      basenRadix: s.basenRadix,
       ts: Date.now(),
     };
     return bump({
@@ -521,6 +523,8 @@ export function execute(s: CalcState): CalcState {
     resultText: outcome.standard.text,
     result: outcome.value,
     mode: s.mode,
+    settings: s.settings,
+    basenRadix: s.basenRadix,
     ts: Date.now(),
   };
   return bump({
@@ -553,7 +557,11 @@ function solveExpression(s: CalcState): CalcState {
     const value = numVal(cleanFloat(solve.root));
     const text = valueToText(value, s.settings);
     const result: ResultView = { value, text, hasAlt: false, showAlt: false, overrideNodes: null, overrideText: null };
-    const entry: HistoryEntry = { id: historySeq++, exprText: `${tokensToSource(tokens)} = 0`, toks: tokens, resultText: text, result: value, mode: s.mode, ts: Date.now() };
+    const entry: HistoryEntry = {
+      id: historySeq++, exprText: `${tokensToSource(tokens)} = 0`, toks: tokens,
+      resultText: text, result: value, mode: s.mode, settings: s.settings,
+      basenRadix: s.basenRadix, ts: Date.now(),
+    };
     return bump({ ...s, tokens, result, error: null, ans: value, vars: { ...s.vars, X: value, Ans: value }, history: [entry, ...s.history].slice(0, 50), flash: `SOLVE · ${solve.iterations} iterations` });
   } catch (error) {
     return bump({ ...s, error: { code: "MATH", message: error instanceof Error ? error.message : "SOLVE failed", position: null }, result: null });
@@ -682,18 +690,40 @@ function replay(s: CalcState, dir: -1 | 1): CalcState {
   if (idx < 0 || idx >= s.history.length) return s; // stop at ends
   const entry = s.history[idx];
   const tokens = editorTokens(entry.toks);
-  return pushIntoEditing(s, tokens, idx, entry.mode);
+  return pushIntoEditing(s, tokens, idx, entry.mode, entry.settings, entry.basenRadix);
 }
 
-function pushIntoEditing(s: CalcState, tokens: Tok[], idx: number | null, mode: ModeId = s.mode): CalcState {
-  const st = pushUndo({ ...s, mode, result: null, error: null, historyIdx: idx });
-  return bump({ ...st, mode, tokens, cursor: tokens.length, stoPending: false, flash: null });
+function pushIntoEditing(
+  s: CalcState,
+  tokens: Tok[],
+  idx: number | null,
+  mode: ModeId = s.mode,
+  settings: CalcSettings | undefined = undefined,
+  basenRadix: Radix | undefined = undefined,
+): CalcState {
+  const restoredSettings = settings
+    ? { ...DEFAULT_SETTINGS, ...settings, numFormat: { ...DEFAULT_SETTINGS.numFormat, ...settings.numFormat } }
+    : s.settings;
+  const restoredRadix = basenRadix && ["dec", "hex", "oct", "bin"].includes(basenRadix)
+    ? basenRadix
+    : s.basenRadix;
+  const st = pushUndo({
+    ...s, mode, settings: restoredSettings, basenRadix: restoredRadix,
+    result: null, error: null, historyIdx: idx,
+  });
+  return bump({
+    ...st, mode, settings: restoredSettings, basenRadix: restoredRadix,
+    tokens, cursor: tokens.length, stoPending: false, flash: null,
+  });
 }
 
-/** replay a specific history entry into the editing line and its original mode. */
+/** replay a specific history entry into the editing line and its original mode and settings. */
 export function replayEntry(s: CalcState, entry: HistoryEntry): CalcState {
   const idx = s.history.findIndex((h) => h.id === entry.id);
-  return pushIntoEditing(s, editorTokens(entry.toks), idx === -1 ? null : idx, entry.mode);
+  return pushIntoEditing(
+    s, editorTokens(entry.toks), idx === -1 ? null : idx,
+    entry.mode, entry.settings, entry.basenRadix,
+  );
 }
 
 export function clearVars(s: CalcState): CalcState {
