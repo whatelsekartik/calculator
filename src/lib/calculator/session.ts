@@ -234,19 +234,57 @@ export function deserializeValue(v: SerValue): Value {
   }
 }
 
+export interface StatsData {
+  twoVar: boolean;
+  freqOn: boolean;
+  rows: { x: string; y: string; f: string }[];
+}
+
+export interface TableCfg {
+  f: string;
+  g: string;
+  start: string;
+  end: string;
+  step: string;
+}
+
 export interface Persisted {
   settings: CalcSettings;
   vars: Record<string, SerValue | null>;
   ans: SerValue;
   history: Array<Omit<HistoryEntry, "result"> & { result: SerValue }>;
   mode: ModeId;
+  basenRadix?: Radix;
   matrices: Record<string, number[][] | null>;
   vectors: Record<string, number[] | null>;
+  statsData?: StatsData;
+  tableCfg?: TableCfg;
 }
 
 const STORAGE_KEY = "campusplus.calculator.v1";
 
-export function saveState(s: CalcState): void {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStatsData(value: unknown): value is StatsData {
+  if (!isRecord(value) || typeof value.twoVar !== "boolean" || typeof value.freqOn !== "boolean" || !Array.isArray(value.rows)) return false;
+  return value.rows.length <= 80 && value.rows.every((row) =>
+    isRecord(row) && typeof row.x === "string" && typeof row.y === "string" && typeof row.f === "string",
+  );
+}
+
+function isTableCfg(value: unknown): value is TableCfg {
+  return isRecord(value) &&
+    typeof value.f === "string" && typeof value.g === "string" &&
+    typeof value.start === "string" && typeof value.end === "string" &&
+    typeof value.step === "string";
+}
+
+export function saveState(
+  s: CalcState,
+  ui: { statsData?: StatsData; tableCfg?: TableCfg } = {},
+): void {
   try {
     const p: Persisted = {
       settings: s.settings,
@@ -254,8 +292,11 @@ export function saveState(s: CalcState): void {
       ans: serializeValue(s.ans),
       history: s.history.slice(0, 50).map((h) => ({ ...h, result: serializeValue(h.result) })),
       mode: s.mode,
+      basenRadix: s.basenRadix,
       matrices: s.matrices,
       vectors: s.vectors,
+      ...(ui.statsData ? { statsData: ui.statsData } : {}),
+      ...(ui.tableCfg ? { tableCfg: ui.tableCfg } : {}),
     };
     getCalculatorPersistence().write(STORAGE_KEY, JSON.stringify(p));
   } catch {
@@ -263,23 +304,42 @@ export function saveState(s: CalcState): void {
   }
 }
 
-export function loadState(): Partial<CalcState> | null {
+export function loadState(): (Partial<CalcState> & { statsData?: StatsData; tableCfg?: TableCfg }) | null {
   try {
     const raw = getCalculatorPersistence().read(STORAGE_KEY);
     if (!raw) return null;
-    const p = JSON.parse(raw) as Persisted;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed)) return null;
+    const p = parsed as unknown as Persisted;
+    const settings = isRecord(p.settings)
+      ? { ...DEFAULT_SETTINGS, ...p.settings }
+      : DEFAULT_SETTINGS;
+    settings.numFormat = {
+      ...DEFAULT_SETTINGS.numFormat,
+      ...(isRecord(settings.numFormat) ? settings.numFormat : {}),
+    };
+    const varsRaw = isRecord(p.vars) ? p.vars : {};
+    const vars = Object.fromEntries(
+      Object.entries(varsRaw).map(([k, v]) => [k, v ? deserializeValue(v as SerValue) : null]),
+    );
+    const history = Array.isArray(p.history)
+      ? p.history.filter((h) =>
+          isRecord(h) && typeof h.id === "number" && typeof h.exprText === "string" &&
+          Array.isArray(h.toks) && isRecord(h.result) && typeof h.result.kind === "string",
+        ).map((h) => ({ ...h, result: deserializeValue(h.result) }))
+      : [];
+    historySeq = Math.max(historySeq, ...history.map((h) => h.id + 1));
     return {
-      settings: { ...DEFAULT_SETTINGS, ...p.settings },
-      vars: Object.fromEntries(
-        Object.entries(p.vars ?? {}).map(([k, v]) => [k, v ? deserializeValue(v) : null]),
-      ),
+      settings,
+      vars,
       ans: p.ans ? deserializeValue(p.ans) : intVal(0),
-      history: Array.isArray(p.history)
-        ? p.history.map((h) => ({ ...h, result: deserializeValue(h.result) }))
-        : [],
+      history,
       mode: p.mode && MODES.some((m) => m.id === p.mode) ? p.mode : "calc",
-      matrices: p.matrices ?? { MatA: null, MatB: null, MatC: null, MatD: null },
-      vectors: p.vectors ?? { VctA: null, VctB: null, VctC: null, VctD: null },
+      basenRadix: p.basenRadix && ["dec", "hex", "oct", "bin"].includes(p.basenRadix) ? p.basenRadix : "dec",
+      matrices: isRecord(p.matrices) ? p.matrices as CalcState["matrices"] : { MatA: null, MatB: null, MatC: null, MatD: null },
+      vectors: isRecord(p.vectors) ? p.vectors as CalcState["vectors"] : { VctA: null, VctB: null, VctC: null, VctD: null },
+      ...(isStatsData(p.statsData) ? { statsData: { ...p.statsData, rows: p.statsData.rows.map((r) => ({ ...r })) } } : {}),
+      ...(isTableCfg(p.tableCfg) ? { tableCfg: { ...p.tableCfg } } : {}),
     };
   } catch {
     return null;
