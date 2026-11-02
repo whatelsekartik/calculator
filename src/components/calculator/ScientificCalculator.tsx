@@ -102,7 +102,6 @@ export function ScientificCalculator() {
       setOverlay(null);
       setStatsData(emptyStats());
       setTableCfg(emptyTable());
-      setStatsData(emptyStats());
     },
     replayEntry: (e: HistoryEntry) => setState((s) => replayEntry(s, e)),
     openOverlay: (o: string | null) => setOverlay(o as OverlayId),
