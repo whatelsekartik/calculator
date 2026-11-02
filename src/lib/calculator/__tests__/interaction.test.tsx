@@ -191,6 +191,7 @@ describe("mobile-first mode and setup controls", () => {
 
 describe("scientific calculation acceptance through the physical keypad", () => {
   it("evaluates exact fractions, roots and logarithms", () => {
+    clickText("COMP", ".calc-mode-strip");
     clickKey("All clear");
     ["One", "Divide", "Three", "Execute calculation"].forEach(clickKey);
     expect(container.querySelector(".calc-resultline .dn-frac")).not.toBeNull();
