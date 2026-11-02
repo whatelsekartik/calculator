@@ -291,6 +291,26 @@ describe("advanced mode workflows", () => {
   });
 });
 
+describe("mode strip and table input safeguards", () => {
+  it("does not clear an expression when the active mode is selected again", () => {
+    clickText("COMP", ".calc-mode-strip");
+    clickKey("All clear");
+    pressKeyboard("1");
+    pressKeyboard("+");
+    clickText("COMP", ".calc-mode-strip");
+    expect(inputText()).toContain("1+");
+  });
+
+  it("reports a required-bound error instead of treating an empty bound as zero", () => {
+    clickText("TABLE", ".calc-mode-strip");
+    fillInput("f(x) =", "x^2");
+    fillInput("Start", "");
+    pointerDownText("Generate table");
+    const alert = container.querySelector('[role="alert"]')?.textContent ?? "";
+    expect(alert).toContain("Start is required");
+  });
+});
+
 describe("editor exit and semantic button activation", () => {
   it("returns from full-screen STAT editor to COMP using its close control", () => {
     clickText("STAT", ".calc-mode-strip");
