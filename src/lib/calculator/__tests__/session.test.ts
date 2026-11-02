@@ -149,18 +149,27 @@ describe("history & replay", () => {
     expect(v.frac?.n).toBe(1);
     expect(v.frac?.d).toBe(3);
   });
-  it("history replay restores the original calculation mode", () => {
+  it("history replay restores the original mode and calculation settings", () => {
     let s = setBasenRadix(setMode(initialState(), "basen"), "hex");
     s = insertTokens(s, [tok("var", "F"), tok("op", "+"), tok("num", "1")]);
     s = pressKey(s, "exe");
     expect(s.result?.text).toBe("10");
-    const entry = s.history[0];
+    const baseEntry = s.history[0];
 
     s = setMode(s, "calc");
-    s = replayEntry(s, entry);
+    s = setBasenRadix(s, "dec");
+    s = replayEntry(s, baseEntry);
     expect(s.mode).toBe("basen");
+    expect(s.basenRadix).toBe("hex");
     s = pressKey(s, "exe");
     expect(s.result?.text).toBe("10");
+
+    const degreeEntry = typeKeys(setAngleUnit(initialState(), "deg"), ["sin", "d3", "d0", "exe"]).history[0];
+    s = setAngleUnit(s, "rad");
+    s = replayEntry(s, degreeEntry);
+    expect(s.settings.angle).toBe("deg");
+    s = pressKey(s, "exe");
+    expect(resultReal(s)).toBeCloseTo(0.5, 10);
   });
 
   it("clearHistory empties the list", () => {
