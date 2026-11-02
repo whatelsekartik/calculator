@@ -536,3 +536,42 @@
   .calc-action-row { gap: 14px; padding-inline: 8px; }
   .calc-scientific-row .ck-main { font-size: 10px; }
 }
+
+.calc-mode-strip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  padding: 9px 2px 3px;
+  margin: 0 1px 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.calc-mode-option {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #44494f;
+  border-radius: 7px;
+  color: #c7ccd1;
+  background: linear-gradient(180deg,#30343a,#191c20);
+  font: 700 10px/1 system-ui,sans-serif;
+  letter-spacing: .04em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.calc-mode-option.active {
+  color: #141912;
+  border-color: #9aca62;
+  background: linear-gradient(180deg,#c2e38b,#8dbd4f);
+  box-shadow: 0 0 0 1px #9aca623d;
+}
+.calc-mode-setup {
+  margin-left: auto;
+  color: #e7bd5a;
+}
+@media (max-width: 480px) {
+  .calc-mode-strip { gap: 5px; padding-top: 8px; }
+  .calc-mode-option { min-height: 34px; padding-inline: 11px; font-size: 10px; }
+}
