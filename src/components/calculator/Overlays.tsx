@@ -37,7 +37,7 @@ function Header({ title, onClose }: { title: string; onClose: () => void }) {
     <div className="calc-overlay-head">
       <span>{title}</span>
       <span className="spacer" style={{ flex: 1 }} />
-      <button type="button" className="closex" aria-label="Back to calculation" onPointerDown={(e) => { e.preventDefault(); onClose(); }}>
+      <button type="button" className="closex" aria-label="Back to calculation" onClick={(e) => { e.preventDefault(); onClose(); }}>
         <X size={11} strokeWidth={3} aria-hidden />
       </button>
     </div>
@@ -75,7 +75,7 @@ export function HomeMenu({ act, onClose }: { act: CalcActions; onClose: () => vo
                 type="button"
                 className="calc-mcell"
                 role="menuitem"
-                onPointerDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   act.setMode(m.id);
                   onClose();
@@ -108,7 +108,7 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
           <span>
             {(["deg", "rad", "grad"] as const).map((u) => (
               <button key={u} type="button" className={`calc-tab ${s.angle === u ? "on" : ""}`}
-                onPointerDown={(e) => { e.preventDefault(); set({ angle: u }); }}>
+                onClick={(e) => { e.preventDefault(); set({ angle: u }); }}>
                 {u.toUpperCase()}
               </button>
             ))}
@@ -119,13 +119,13 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
           <span>
             {(["norm1", "norm2"] as const).map((m) => (
               <button key={m} type="button" className={`calc-tab ${s.numFormat.mode === m ? "on" : ""}`}
-                onPointerDown={(e) => { e.preventDefault(); set({ numFormat: { ...s.numFormat, mode: m } }); }}>
+                onClick={(e) => { e.preventDefault(); set({ numFormat: { ...s.numFormat, mode: m } }); }}>
                 {m === "norm1" ? "Norm1" : "Norm2"}
               </button>
             ))}
             {(["fix", "sci"] as const).map((m) => (
               <button key={m} type="button" className={`calc-tab ${s.numFormat.mode === m ? "on" : ""}`}
-                onPointerDown={(e) => { e.preventDefault(); set({ numFormat: { ...s.numFormat, mode: m } }); }}>
+                onClick={(e) => { e.preventDefault(); set({ numFormat: { ...s.numFormat, mode: m } }); }}>
                 {m === "fix" ? `Fix` : `Sci`}
               </button>
             ))}
@@ -148,28 +148,28 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
         <div className="calc-field">
           <span className="flabel">Engineering notation</span>
           <button type="button" className={`calc-tab ${s.eng ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); set({ eng: !s.eng }); }}>
+            onClick={(e) => { e.preventDefault(); set({ eng: !s.eng }); }}>
             {s.eng ? "ON" : "OFF"}
           </button>
         </div>
         <div className="calc-field">
           <span className="flabel">Fraction results (exact)</span>
           <button type="button" className={`calc-tab ${s.fractionResult ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); set({ fractionResult: !s.fractionResult }); }}>
+            onClick={(e) => { e.preventDefault(); set({ fractionResult: !s.fractionResult }); }}>
             {s.fractionResult ? "ON" : "OFF"}
           </button>
         </div>
         <div className="calc-field">
           <span className="flabel">Mixed fractions ab/c→d/c</span>
           <button type="button" className={`calc-tab ${s.mixedFractions ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); set({ mixedFractions: !s.mixedFractions }); }}>
+            onClick={(e) => { e.preventDefault(); set({ mixedFractions: !s.mixedFractions }); }}>
             {s.mixedFractions ? "ON" : "OFF"}
           </button>
         </div>
         <div className="calc-field">
           <span className="flabel">Thousands separators</span>
           <button type="button" className={`calc-tab ${s.thousandsSep ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); set({ thousandsSep: !s.thousandsSep }); }}>
+            onClick={(e) => { e.preventDefault(); set({ thousandsSep: !s.thousandsSep }); }}>
             {s.thousandsSep ? "ON" : "OFF"}
           </button>
         </div>
@@ -177,11 +177,11 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
           <span className="flabel">Complex result form</span>
           <span>
             <button type="button" className={`calc-tab ${s.complexForm === "rect" ? "on" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); set({ complexForm: "rect" }); }}>
+              onClick={(e) => { e.preventDefault(); set({ complexForm: "rect" }); }}>
               a+bi
             </button>
             <button type="button" className={`calc-tab ${s.complexForm === "polar" ? "on" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); set({ complexForm: "polar" }); }}>
+              onClick={(e) => { e.preventDefault(); set({ complexForm: "polar" }); }}>
               r∠θ
             </button>
           </span>
@@ -191,7 +191,7 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
           <span>
             {(["classic", "amber", "night"] as const).map((t) => (
               <button key={t} type="button" className={`calc-tab ${s.lcd === t ? "on" : ""}`}
-                onPointerDown={(e) => { e.preventDefault(); set({ lcd: t }); }}>
+                onClick={(e) => { e.preventDefault(); set({ lcd: t }); }}>
                 {t === "classic" ? "LCD" : t === "amber" ? "AMB" : "DRK"}
               </button>
             ))}
@@ -200,7 +200,7 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
         <div className="calc-field">
           <span className="flabel">Key vibration (touch)</span>
           <button type="button" className={`calc-tab ${s.haptic ? "on" : ""}`}
-            onPointerDown={(e) => { e.preventDefault(); set({ haptic: !s.haptic }); }}>
+            onClick={(e) => { e.preventDefault(); set({ haptic: !s.haptic }); }}>
             {s.haptic ? "ON" : "OFF"}
           </button>
         </div>
@@ -208,7 +208,7 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
         <div style={{ height: 10 }} />
         <div className="calc-list-row">
           <span style={{ flex: 1 }}>Calculation history ({state.history.length})</span>
-          <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); act.clearHistory(); }}>
+          <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); act.clearHistory(); }}>
             Clear
           </button>
         </div>
@@ -218,7 +218,7 @@ export function SettingsPanel({ state, act, onClose }: { state: CalcState; act: 
             type="button"
             className="calc-mini-btn"
             aria-label="Reset all settings and memory"
-            onPointerDown={(e) => { e.preventDefault(); act.hardReset(); }}
+            onClick={(e) => { e.preventDefault(); act.hardReset(); }}
           >
             Reset all
           </button>
@@ -307,7 +307,7 @@ export function CatalogPanel({ state, act, onClose }: { state: CalcState; act: C
         <div className="calc-tabrow" role="tablist">
           {([["fn", "Functions"], ["const", "Constants"], ["conv", "Convert"], ["var", "Variables"]] as const).map(([id, label]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} className={`calc-tab ${tab === id ? "on" : ""}`}
-              onPointerDown={(e) => { e.preventDefault(); setTab(id); }}>
+              onClick={(e) => { e.preventDefault(); setTab(id); }}>
               {label}
             </button>
           ))}
@@ -342,7 +342,7 @@ function FnCatalog({ state, act, onClose }: { state: CalcState; act: CalcActions
                 className="calc-mini-btn"
                 style={{ minWidth: 64, fontWeight: 800 }}
                 aria-label={`Insert ${it.label}`}
-                onPointerDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   const raw = it as { op?: boolean; constTok?: boolean };
                   insertSrc(act, it.src, onClose, raw.op ? it.src : undefined, raw.constTok);
@@ -395,7 +395,7 @@ function ConstCatalog({ act, onClose }: { act: CalcActions; onClose: () => void 
                   </span>
                 </span>
                 <button type="button" className="calc-mini-btn" aria-label={`Insert ${c.name}`}
-                  onPointerDown={(e) => { e.preventDefault(); act.insertSource(String(c.value)); onClose(); }}>
+                  onClick={(e) => { e.preventDefault(); act.insertSource(String(c.value)); onClose(); }}>
                   Ins
                 </button>
               </div>
@@ -466,7 +466,7 @@ function ConvCatalog({ state, act, onClose }: { state: CalcState; act: CalcActio
         <span style={{ flex: 1, fontWeight: 800 }}>{result !== null ? String(Number(result.toPrecision(10))) : "—"}</span>
         <button type="button" className="calc-mini-btn" disabled={result === null}
           aria-label="Insert conversion result"
-          onPointerDown={(e) => {
+          onClick={(e) => {
             e.preventDefault();
             if (result === null) return;
             act.insertSource(String(Number(result.toPrecision(10))));
@@ -492,7 +492,7 @@ function VarCatalog({ state, act, onClose }: { state: CalcState; act: CalcAction
             <span style={{ width: 34, fontWeight: 800 }}>{n}</span>
             <span style={{ flex: 1 }}>{v ? valueToText(v, state.settings) : "0"}</span>
             <button type="button" className="calc-mini-btn" aria-label={`Insert variable ${n}`}
-              onPointerDown={(e) => {
+              onClick={(e) => {
                 e.preventDefault();
                 act.insertToks([tok("var", n)]);
                 onClose();
@@ -503,7 +503,7 @@ function VarCatalog({ state, act, onClose }: { state: CalcState; act: CalcAction
         );
       })}
       <div style={{ height: 8 }} />
-      <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); act.clearVars(); }} aria-label="Clear all variables">
+      <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); act.clearVars(); }} aria-label="Clear all variables">
         Clear variables (A–F,X,Y,M)
       </button>
       <p className="calc-note">Store: enter value or EXE, then SHIFT + ( (STO), then ALPHA + letter.</p>
@@ -523,14 +523,14 @@ export function HistoryPanel({ state, act, onClose }: { state: CalcState; act: C
         )}
         {state.history.map((h) => (
           <button key={h.id} type="button" className="calc-hist-entry" aria-label={`Replay ${h.exprText} equals ${h.resultText}`}
-            onPointerDown={(e) => { e.preventDefault(); act.replayEntry(h); onClose(); }}>
+            onClick={(e) => { e.preventDefault(); act.replayEntry(h); onClose(); }}>
             <span className="calc-hist-expr">{h.exprText}</span>
             <span className="calc-hist-res">= {h.resultText}</span>
           </button>
         ))}
         {state.history.length > 0 && (
           <div style={{ marginTop: 8 }}>
-            <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); act.clearHistory(); }}>
+            <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); act.clearHistory(); }}>
               <Trash2 size={10} aria-hidden /> Clear history
             </button>
           </div>
@@ -588,13 +588,13 @@ export function ToolsPanel({ state, act, onClose }: { state: CalcState; act: Cal
           <input type="number" value={x0} onChange={(e) => setX0(e.target.value)} aria-label="Initial value" />
         </div>
         <button type="button" className="calc-mini-btn" disabled={!hasX}
-          onPointerDown={(e) => { e.preventDefault(); doSolve(); }}>
+          onClick={(e) => { e.preventDefault(); doSolve(); }}>
           Solve
         </button>
         {solveOut && <p className="calc-note" role="status">→ {solveOut}</p>}
 
         <p className="calc-note" style={{ fontWeight: 800, marginTop: 12 }}>FACT  prime factorization of Ans</p>
-        <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); doFact(); }}>
+        <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); doFact(); }}>
           Factor Ans
         </button>
         {factOut && <p className="calc-note" role="status">→ {factOut}</p>}
@@ -602,15 +602,15 @@ export function ToolsPanel({ state, act, onClose }: { state: CalcState; act: Cal
         <p className="calc-note" style={{ fontWeight: 800, marginTop: 12 }}>RESET</p>
         <div className="calc-list-row">
           <span style={{ flex: 1 }}>Variables & answer memory</span>
-          <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); act.clearVars(); }}>Clear</button>
+          <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); act.clearVars(); }}>Clear</button>
         </div>
         <div className="calc-list-row">
           <span style={{ flex: 1 }}>Matrices & vectors</span>
-          <button type="button" className="calc-mini-btn" onPointerDown={(e) => { e.preventDefault(); act.clearMatrices(); }}>Clear</button>
+          <button type="button" className="calc-mini-btn" onClick={(e) => { e.preventDefault(); act.clearMatrices(); }}>Clear</button>
         </div>
         <div className="calc-list-row">
           <span style={{ flex: 1 }}>Everything (settings + history)</span>
-          <button type="button" className="calc-mini-btn" aria-label="Factory reset" onPointerDown={(e) => { e.preventDefault(); act.hardReset(); onClose(); }}>
+          <button type="button" className="calc-mini-btn" aria-label="Factory reset" onClick={(e) => { e.preventDefault(); act.hardReset(); onClose(); }}>
             Factory reset
           </button>
         </div>
