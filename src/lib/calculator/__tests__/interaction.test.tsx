@@ -325,6 +325,23 @@ describe("mode strip and table input safeguards", () => {
   });
 });
 
+describe("visible SETUP modifier handling", () => {
+  it("consumes armed SHIFT and ALPHA before opening Settings", () => {
+    clickText("COMP", ".calc-mode-strip");
+    clickKey("Shift: access yellow secondary functions");
+    clickText("SETUP", ".calc-mode-strip");
+    expect(container.querySelector(".calc-overlay")?.textContent).toContain("SETTINGS");
+    expect(container.querySelector(".calc-statusrow .calc-badge.active")).toBeNull();
+    pressKeyboard("Escape");
+
+    clickKey("Alpha: access red variable functions");
+    clickText("SETUP", ".calc-mode-strip");
+    expect(container.querySelector(".calc-overlay")?.textContent).toContain("SETTINGS");
+    expect(container.querySelector(".calc-statusrow .calc-badge.active")).toBeNull();
+    pressKeyboard("Escape");
+  });
+});
+
 describe("modal accessibility and focus handling", () => {
   it("opens a semantic dialog, moves focus inside, and traps keyboard focus", () => {
     clickText("SETUP", ".calc-mode-strip");
