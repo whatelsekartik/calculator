@@ -179,7 +179,7 @@ export function ScientificCalculator() {
       else if (k === "x" || k === "X") setState((s) => insertTokens(s, [tok("var", "X")]));
       else if (k === "y" || k === "Y") setState((s) => insertTokens(s, [tok("var", "Y")]));
       else if (k === "e") setState((s) => insertTokens(s, [tok("const", "e")]));
-      else if (/^[A-F]$/.test(k) || k === "m" || k === "M") {
+      else if (/^[A-F]$/i.test(k) || k === "m" || k === "M") {
         // Uppercase E enters the stored variable; lowercase e is Euler's constant.
         setState((s) => insertTokens(s, [tok("var", k.toUpperCase())]));
       } else if (k === "p" || k.toLowerCase() === "π") setState((s) => insertTokens(s, [tok("const", "pi")]));
