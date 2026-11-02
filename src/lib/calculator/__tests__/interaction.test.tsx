@@ -301,6 +301,20 @@ describe("mode strip and table input safeguards", () => {
     expect(inputText()).toContain("1+");
   });
 
+  it("does not treat Enter on a focused mode button as calculator EXE", () => {
+    clickText("COMP", ".calc-mode-strip");
+    clickKey("All clear");
+    pressKeyboard("1");
+    pressKeyboard("+");
+    const comp = buttonByText("COMP", ".calc-mode-strip");
+    act(() => {
+      comp.focus();
+      comp.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector(".calc-errorline")).toBeNull();
+    expect(inputText()).toContain("1+");
+  });
+
   it("reports a required-bound error instead of treating an empty bound as zero", () => {
     clickText("TABLE", ".calc-mode-strip");
     fillInput("f(x) =", "x^2");
