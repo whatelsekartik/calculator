@@ -3,8 +3,8 @@ import ScientificCalculator from "@/components/calculator/CalculatorLoader";
 
 export default function CalculatorPageContent() {
   return (
-    <main className="min-h-screen bg-slate-100 pb-16">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <main className="min-h-screen bg-[#e9edf0] pb-16">
+      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-lg bg-indigo-600 text-white">
@@ -25,7 +25,7 @@ export default function CalculatorPageContent() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-5xl gap-8 px-4 pt-8 lg:grid-cols-[402px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-6xl gap-8 px-3 pt-5 sm:px-4 lg:grid-cols-[minmax(390px,430px)_minmax(0,1fr)]">
         <section aria-label="Calculator">
           <ScientificCalculator />
         </section>
