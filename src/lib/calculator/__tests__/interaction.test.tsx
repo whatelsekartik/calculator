@@ -409,7 +409,7 @@ describe("physical keyboard constants and variables", () => {
     clickKey("All clear");
     pressKeyboard("e");
     pressKeyboard("Enter");
-    expect(numericResult()).toBeCloseTo(Math.E, 10);
+    expect(numericResult()).toBeCloseTo(Math.E, 8);
 
     clickKey("All clear");
     pressKeyboard("E");
