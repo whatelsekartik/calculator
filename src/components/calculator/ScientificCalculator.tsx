@@ -302,6 +302,10 @@ export function ScientificCalculator() {
 
   const editorActive = overlay !== null || EDITOR_MODES.includes(state.mode);
 
+  // The physical MODE key remains available, but a persistent app strip makes
+  // mode switching discoverable and reliable on touch screens.
+  const quickModes = MODES;
+
   return (
     <div className="calc-device" data-lcd={state.settings.lcd}>
       {/* upper metallic shell */}
@@ -319,6 +323,30 @@ export function ScientificCalculator() {
 
       {/* base-N conversion strip */}
       {baseStrip}
+
+      <nav className="calc-mode-strip" aria-label="Calculator modes">
+        {quickModes.map((mode) => (
+          <button
+            key={mode.id}
+            type="button"
+            className={`calc-mode-option ${state.mode === mode.id ? "active" : ""}`}
+            aria-current={state.mode === mode.id ? "page" : undefined}
+            onClick={() => {
+              setState((s) => setMode(s, mode.id));
+              setOverlay(null);
+            }}
+          >
+            {mode.name}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="calc-mode-option calc-mode-setup"
+          onClick={() => setOverlay((o) => (o === "settings" ? null : "settings"))}
+        >
+          SETUP
+        </button>
+      </nav>
 
       {/* mode chips */}
       {state.mode === "matrix" || state.mode === "vector" || state.mode === "basen" || state.mode === "complex" ? (
