@@ -36,6 +36,49 @@ export function CalculatorScreen({
 }) {
   const inputRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const overlayOpen = Boolean(overlay);
+
+  useEffect(() => {
+    if (!overlayOpen) {
+      const previous = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (previous?.isConnected) previous.focus();
+      return;
+    }
+
+    const root = overlayRef.current;
+    if (!root) return;
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const getFocusable = () => Array.from(root.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+    ));
+    getFocusable()[0]?.focus({ preventScroll: true });
+
+    const keepFocusInside = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const items = getFocusable();
+      if (items.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    root.addEventListener("keydown", keepFocusInside);
+    return () => root.removeEventListener("keydown", keepFocusInside);
+  }, [overlayOpen]);
 
   const inputNodes = useMemo(() => {
     if (state.tokens.length === 0) return [] as DNode[];
@@ -94,7 +137,7 @@ export function CalculatorScreen({
       </div>
 
       {overlay ? (
-        <div className="calc-overlay">{overlay}</div>
+        <div ref={overlayRef} className="calc-overlay" role="dialog" aria-modal="true" aria-label="Calculator panel">{overlay}</div>
       ) : state.error ? (
         <div className="calc-errorline" aria-live="assertive">
           <div className="calc-error-code">
