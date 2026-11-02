@@ -311,13 +311,15 @@ export function loadState(): (Partial<CalcState> & { statsData?: StatsData; tabl
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return null;
     const p = parsed as unknown as Persisted;
-    const settings = isRecord(p.settings)
-      ? { ...DEFAULT_SETTINGS, ...p.settings }
-      : DEFAULT_SETTINGS;
-    settings.numFormat = {
-      ...DEFAULT_SETTINGS.numFormat,
-      ...(isRecord(settings.numFormat) ? settings.numFormat : {}),
-    };
+    const rawSettings = isRecord(p.settings) ? p.settings : {};
+    const settings: CalcSettings = {
+      ...DEFAULT_SETTINGS,
+      ...rawSettings,
+      numFormat: {
+        ...DEFAULT_SETTINGS.numFormat,
+        ...(isRecord(rawSettings.numFormat) ? rawSettings.numFormat : {}),
+      },
+    } as CalcSettings;
     const varsRaw = isRecord(p.vars) ? p.vars : {};
     const vars = Object.fromEntries(
       Object.entries(varsRaw).map(([k, v]) => [k, v ? deserializeValue(v as SerValue) : null]),
