@@ -6,8 +6,10 @@ import { describe, it, expect } from "vitest";
 import {
   initialState, pressKey, typeKeys, setMode, setAngleUnit, clearHistory,
   tokensToSource, serializeValue, deserializeValue, CalcState, updateSettings,
+  replayEntry, insertTokens, setBasenRadix,
 } from "../session";
 import { asReal, Value } from "../core";
+import { tok } from "../parser";
 
 const src = (s: CalcState) => tokensToSource(s.tokens).replace(/\s+/g, "");
 const resultReal = (s: CalcState): number => {
@@ -147,6 +149,20 @@ describe("history & replay", () => {
     expect(v.frac?.n).toBe(1);
     expect(v.frac?.d).toBe(3);
   });
+  it("history replay restores the original calculation mode", () => {
+    let s = setBasenRadix(setMode(initialState(), "basen"), "hex");
+    s = insertTokens(s, [tok("var", "F"), tok("op", "+"), tok("num", "1")]);
+    s = pressKey(s, "exe");
+    expect(s.result?.text).toBe("10");
+    const entry = s.history[0];
+
+    s = setMode(s, "calc");
+    s = replayEntry(s, entry);
+    expect(s.mode).toBe("basen");
+    s = pressKey(s, "exe");
+    expect(s.result?.text).toBe("10");
+  });
+
   it("clearHistory empties the list", () => {
     let s = typeKeys(initialState(), ["d1", "exe"]);
     s = clearHistory(s);
