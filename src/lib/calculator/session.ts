@@ -324,7 +324,7 @@ export function loadState(): (Partial<CalcState> & { statsData?: StatsData; tabl
     );
     const history = Array.isArray(p.history)
       ? p.history.filter((h) =>
-          isRecord(h) && Number.isSafeInteger(h.id) && Number(h.id) >= 0 &&
+          isRecord(h) && typeof h.id === "number" && Number.isSafeInteger(h.id) && h.id >= 0 &&
           typeof h.exprText === "string" && Array.isArray(h.toks) &&
           isRecord(h.result) && typeof h.result.kind === "string",
         ).map((h) => {
