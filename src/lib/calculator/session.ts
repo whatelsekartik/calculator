@@ -825,6 +825,8 @@ function runAction(s: CalcState, action: string): CalcState {
 
 /** change mode — keeps variables/Ans/history (hardware behavior) */
 export function setMode(s: CalcState, mode: ModeId): CalcState {
+  // Re-selecting the active mode must not erase an in-progress expression.
+  if (s.mode === mode) return s;
   const st = pushUndo({ ...s, result: null, error: null });
   return bump({ ...st, mode, tokens: [], cursor: 0, shift: false, alpha: false, stoPending: false, historyIdx: null });
 }
