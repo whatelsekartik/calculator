@@ -58,6 +58,8 @@ export interface HistoryEntry {
   resultText: string;
   result: Value;
   mode: ModeId;
+  settings?: CalcSettings;
+  basenRadix?: Radix;
   ts: number;
 }
 
@@ -311,7 +313,7 @@ export function loadState(): (Partial<CalcState> & { statsData?: StatsData; tabl
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return null;
     const p = parsed as unknown as Persisted;
-    const rawSettings = isRecord(p.settings) ? p.settings : {};
+    const rawSettings: Record<string, unknown> = isRecord(p.settings) ? p.settings : {};
     const settings: CalcSettings = {
       ...DEFAULT_SETTINGS,
       ...rawSettings,
