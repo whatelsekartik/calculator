@@ -249,7 +249,7 @@ describe("advanced mode workflows", () => {
 
   it("saves a vector and evaluates its magnitude", () => {
     clickText("VECTOR", ".calc-mode-strip");
-    clickText("✎ EDIT");
+    pointerDownText("✎ EDIT", ".calc-device");
     fillInput("component 1", "1");
     fillInput("component 2", "2");
     fillInput("component 3", "3");
