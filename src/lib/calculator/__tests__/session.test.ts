@@ -6,8 +6,10 @@ import { describe, it, expect } from "vitest";
 import {
   initialState, pressKey, typeKeys, setMode, setAngleUnit, clearHistory,
   tokensToSource, serializeValue, deserializeValue, CalcState, updateSettings,
+  replayEntry, insertTokens, setBasenRadix,
 } from "../session";
 import { asReal, Value } from "../core";
+import { tok } from "../parser";
 
 const src = (s: CalcState) => tokensToSource(s.tokens).replace(/\s+/g, "");
 const resultReal = (s: CalcState): number => {
@@ -147,6 +149,29 @@ describe("history & replay", () => {
     expect(v.frac?.n).toBe(1);
     expect(v.frac?.d).toBe(3);
   });
+  it("history replay restores the original mode and calculation settings", () => {
+    let s = setBasenRadix(setMode(initialState(), "basen"), "hex");
+    s = insertTokens(s, [tok("var", "F"), tok("op", "+"), tok("num", "1")]);
+    s = pressKey(s, "exe");
+    expect(s.result?.text).toBe("10");
+    const baseEntry = s.history[0];
+
+    s = setMode(s, "calc");
+    s = setBasenRadix(s, "dec");
+    s = replayEntry(s, baseEntry);
+    expect(s.mode).toBe("basen");
+    expect(s.basenRadix).toBe("hex");
+    s = pressKey(s, "exe");
+    expect(s.result?.text).toBe("10");
+
+    const degreeEntry = typeKeys(setAngleUnit(initialState(), "deg"), ["sin", "d3", "d0", "exe"]).history[0];
+    s = setAngleUnit(s, "rad");
+    s = replayEntry(s, degreeEntry);
+    expect(s.settings.angle).toBe("deg");
+    s = pressKey(s, "exe");
+    expect(resultReal(s)).toBeCloseTo(0.5, 10);
+  });
+
   it("clearHistory empties the list", () => {
     let s = typeKeys(initialState(), ["d1", "exe"]);
     s = clearHistory(s);
@@ -155,6 +180,15 @@ describe("history & replay", () => {
 });
 
 describe("modes & settings", () => {
+  it("reselecting the active mode preserves the current expression and cursor", () => {
+    let s = typeKeys(initialState(), ["d1", "add", "d2"]);
+    const before = { tokens: s.tokens, cursor: s.cursor, version: s.version };
+    s = setMode(s, "calc");
+    expect(s.tokens).toEqual(before.tokens);
+    expect(s.cursor).toBe(before.cursor);
+    expect(s.version).toBe(before.version);
+  });
+
   it("angle unit switch changes subsequent trig", () => {
     let s = typeKeys(initialState(), ["sin", "d3", "d0", "exe"]);
     expect(resultReal(s)).toBe(0.5);

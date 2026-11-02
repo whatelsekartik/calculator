@@ -575,3 +575,21 @@
   .calc-mode-strip { gap: 5px; padding-top: 8px; }
   .calc-mode-option { min-height: 34px; padding-inline: 11px; font-size: 10px; }
 }
+
+
+/* Consistent keyboard focus for every non-physical calculator control. */
+.calc-mode-option:focus-visible,
+.calc-chip:focus-visible,
+.calc-tab:focus-visible,
+.calc-mini-btn:focus-visible,
+.calc-mcell:focus-visible,
+.calc-hist-entry:focus-visible,
+.calc-overlay-head .closex:focus-visible,
+.calc-field input:focus-visible,
+.calc-field select:focus-visible,
+.calc-grid-inputs input:focus-visible {
+  outline: 2px solid #648cf0;
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
+}

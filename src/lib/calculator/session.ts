@@ -58,6 +58,8 @@ export interface HistoryEntry {
   resultText: string;
   result: Value;
   mode: ModeId;
+  settings?: CalcSettings;
+  basenRadix?: Radix;
   ts: number;
 }
 
@@ -234,19 +236,57 @@ export function deserializeValue(v: SerValue): Value {
   }
 }
 
+export interface StatsData {
+  twoVar: boolean;
+  freqOn: boolean;
+  rows: { x: string; y: string; f: string }[];
+}
+
+export interface TableCfg {
+  f: string;
+  g: string;
+  start: string;
+  end: string;
+  step: string;
+}
+
 export interface Persisted {
   settings: CalcSettings;
   vars: Record<string, SerValue | null>;
   ans: SerValue;
   history: Array<Omit<HistoryEntry, "result"> & { result: SerValue }>;
   mode: ModeId;
+  basenRadix?: Radix;
   matrices: Record<string, number[][] | null>;
   vectors: Record<string, number[] | null>;
+  statsData?: StatsData;
+  tableCfg?: TableCfg;
 }
 
 const STORAGE_KEY = "campusplus.calculator.v1";
 
-export function saveState(s: CalcState): void {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStatsData(value: unknown): value is StatsData {
+  if (!isRecord(value) || typeof value.twoVar !== "boolean" || typeof value.freqOn !== "boolean" || !Array.isArray(value.rows)) return false;
+  return value.rows.length <= 80 && value.rows.every((row) =>
+    isRecord(row) && typeof row.x === "string" && typeof row.y === "string" && typeof row.f === "string",
+  );
+}
+
+function isTableCfg(value: unknown): value is TableCfg {
+  return isRecord(value) &&
+    typeof value.f === "string" && typeof value.g === "string" &&
+    typeof value.start === "string" && typeof value.end === "string" &&
+    typeof value.step === "string";
+}
+
+export function saveState(
+  s: CalcState,
+  ui: { statsData?: StatsData; tableCfg?: TableCfg } = {},
+): void {
   try {
     const p: Persisted = {
       settings: s.settings,
@@ -254,8 +294,11 @@ export function saveState(s: CalcState): void {
       ans: serializeValue(s.ans),
       history: s.history.slice(0, 50).map((h) => ({ ...h, result: serializeValue(h.result) })),
       mode: s.mode,
+      basenRadix: s.basenRadix,
       matrices: s.matrices,
       vectors: s.vectors,
+      ...(ui.statsData ? { statsData: ui.statsData } : {}),
+      ...(ui.tableCfg ? { tableCfg: ui.tableCfg } : {}),
     };
     getCalculatorPersistence().write(STORAGE_KEY, JSON.stringify(p));
   } catch {
@@ -263,23 +306,66 @@ export function saveState(s: CalcState): void {
   }
 }
 
-export function loadState(): Partial<CalcState> | null {
+export function loadState(): (Partial<CalcState> & { statsData?: StatsData; tableCfg?: TableCfg }) | null {
   try {
     const raw = getCalculatorPersistence().read(STORAGE_KEY);
     if (!raw) return null;
-    const p = JSON.parse(raw) as Persisted;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed)) return null;
+    const p = parsed as unknown as Persisted;
+    const rawSettings: Record<string, unknown> = isRecord(p.settings) ? p.settings : {};
+    const settings: CalcSettings = {
+      ...DEFAULT_SETTINGS,
+      ...rawSettings,
+      numFormat: {
+        ...DEFAULT_SETTINGS.numFormat,
+        ...(isRecord(rawSettings.numFormat) ? rawSettings.numFormat : {}),
+      },
+    } as CalcSettings;
+    const varsRaw = isRecord(p.vars) ? p.vars : {};
+    const vars = Object.fromEntries(
+      Object.entries(varsRaw).map(([k, v]) => [k, v ? deserializeValue(v as SerValue) : null]),
+    );
+    const history = Array.isArray(p.history)
+      ? p.history.filter((h) =>
+          isRecord(h) && typeof h.id === "number" && Number.isSafeInteger(h.id) && h.id >= 0 &&
+          typeof h.exprText === "string" && Array.isArray(h.toks) &&
+          isRecord(h.result) && typeof h.result.kind === "string",
+        ).map((h) => {
+          const savedSettings = isRecord(h.settings) ? h.settings : null;
+          const restoredSettings = savedSettings
+            ? {
+                ...DEFAULT_SETTINGS,
+                ...savedSettings,
+                numFormat: {
+                  ...DEFAULT_SETTINGS.numFormat,
+                  ...(isRecord(savedSettings.numFormat) ? savedSettings.numFormat : {}),
+                },
+              } as CalcSettings
+            : undefined;
+          const savedRadix = ["dec", "hex", "oct", "bin"].includes(String(h.basenRadix))
+            ? h.basenRadix as Radix
+            : undefined;
+          return {
+            ...h,
+            result: deserializeValue(h.result as SerValue),
+            settings: restoredSettings,
+            basenRadix: savedRadix,
+          };
+        })
+      : [];
+    historySeq = Math.max(historySeq, ...history.map((h) => h.id + 1));
     return {
-      settings: { ...DEFAULT_SETTINGS, ...p.settings },
-      vars: Object.fromEntries(
-        Object.entries(p.vars ?? {}).map(([k, v]) => [k, v ? deserializeValue(v) : null]),
-      ),
+      settings,
+      vars,
       ans: p.ans ? deserializeValue(p.ans) : intVal(0),
-      history: Array.isArray(p.history)
-        ? p.history.map((h) => ({ ...h, result: deserializeValue(h.result) }))
-        : [],
+      history,
       mode: p.mode && MODES.some((m) => m.id === p.mode) ? p.mode : "calc",
-      matrices: p.matrices ?? { MatA: null, MatB: null, MatC: null, MatD: null },
-      vectors: p.vectors ?? { VctA: null, VctB: null, VctC: null, VctD: null },
+      basenRadix: p.basenRadix && ["dec", "hex", "oct", "bin"].includes(p.basenRadix) ? p.basenRadix : "dec",
+      matrices: isRecord(p.matrices) ? p.matrices as CalcState["matrices"] : { MatA: null, MatB: null, MatC: null, MatD: null },
+      vectors: isRecord(p.vectors) ? p.vectors as CalcState["vectors"] : { VctA: null, VctB: null, VctC: null, VctD: null },
+      ...(isStatsData(p.statsData) ? { statsData: { ...p.statsData, rows: p.statsData.rows.map((r) => ({ ...r })) } } : {}),
+      ...(isTableCfg(p.tableCfg) ? { tableCfg: { ...p.tableCfg } } : {}),
     };
   } catch {
     return null;
@@ -424,6 +510,8 @@ export function execute(s: CalcState): CalcState {
       resultText: text + ` (${s.basenRadix.toUpperCase()})`,
       result: value,
       mode: s.mode,
+      settings: s.settings,
+      basenRadix: s.basenRadix,
       ts: Date.now(),
     };
     return bump({
@@ -461,6 +549,8 @@ export function execute(s: CalcState): CalcState {
     resultText: outcome.standard.text,
     result: outcome.value,
     mode: s.mode,
+    settings: s.settings,
+    basenRadix: s.basenRadix,
     ts: Date.now(),
   };
   return bump({
@@ -493,7 +583,11 @@ function solveExpression(s: CalcState): CalcState {
     const value = numVal(cleanFloat(solve.root));
     const text = valueToText(value, s.settings);
     const result: ResultView = { value, text, hasAlt: false, showAlt: false, overrideNodes: null, overrideText: null };
-    const entry: HistoryEntry = { id: historySeq++, exprText: `${tokensToSource(tokens)} = 0`, toks: tokens, resultText: text, result: value, mode: s.mode, ts: Date.now() };
+    const entry: HistoryEntry = {
+      id: historySeq++, exprText: `${tokensToSource(tokens)} = 0`, toks: tokens,
+      resultText: text, result: value, mode: s.mode, settings: s.settings,
+      basenRadix: s.basenRadix, ts: Date.now(),
+    };
     return bump({ ...s, tokens, result, error: null, ans: value, vars: { ...s.vars, X: value, Ans: value }, history: [entry, ...s.history].slice(0, 50), flash: `SOLVE · ${solve.iterations} iterations` });
   } catch (error) {
     return bump({ ...s, error: { code: "MATH", message: error instanceof Error ? error.message : "SOLVE failed", position: null }, result: null });
@@ -622,18 +716,40 @@ function replay(s: CalcState, dir: -1 | 1): CalcState {
   if (idx < 0 || idx >= s.history.length) return s; // stop at ends
   const entry = s.history[idx];
   const tokens = editorTokens(entry.toks);
-  return pushIntoEditing(s, tokens, idx);
+  return pushIntoEditing(s, tokens, idx, entry.mode, entry.settings, entry.basenRadix);
 }
 
-function pushIntoEditing(s: CalcState, tokens: Tok[], idx: number | null): CalcState {
-  const st = pushUndo({ ...s, result: null, error: null, historyIdx: idx });
-  return bump({ ...st, tokens, cursor: tokens.length, stoPending: false, flash: null });
+function pushIntoEditing(
+  s: CalcState,
+  tokens: Tok[],
+  idx: number | null,
+  mode: ModeId = s.mode,
+  settings: CalcSettings | undefined = undefined,
+  basenRadix: Radix | undefined = undefined,
+): CalcState {
+  const restoredSettings = settings
+    ? { ...DEFAULT_SETTINGS, ...settings, numFormat: { ...DEFAULT_SETTINGS.numFormat, ...settings.numFormat } }
+    : s.settings;
+  const restoredRadix = basenRadix && ["dec", "hex", "oct", "bin"].includes(basenRadix)
+    ? basenRadix
+    : s.basenRadix;
+  const st = pushUndo({
+    ...s, mode, settings: restoredSettings, basenRadix: restoredRadix,
+    result: null, error: null, historyIdx: idx,
+  });
+  return bump({
+    ...st, mode, settings: restoredSettings, basenRadix: restoredRadix,
+    tokens, cursor: tokens.length, stoPending: false, flash: null,
+  });
 }
 
-/** replay a specific history entry into the editing line */
+/** replay a specific history entry into the editing line and its original mode and settings. */
 export function replayEntry(s: CalcState, entry: HistoryEntry): CalcState {
   const idx = s.history.findIndex((h) => h.id === entry.id);
-  return pushIntoEditing(s, editorTokens(entry.toks), idx === -1 ? null : idx);
+  return pushIntoEditing(
+    s, editorTokens(entry.toks), idx === -1 ? null : idx,
+    entry.mode, entry.settings, entry.basenRadix,
+  );
 }
 
 export function clearVars(s: CalcState): CalcState {
@@ -765,6 +881,8 @@ function runAction(s: CalcState, action: string): CalcState {
 
 /** change mode — keeps variables/Ans/history (hardware behavior) */
 export function setMode(s: CalcState, mode: ModeId): CalcState {
+  // Re-selecting the active mode must not erase an in-progress expression.
+  if (s.mode === mode) return s;
   const st = pushUndo({ ...s, result: null, error: null });
   return bump({ ...st, mode, tokens: [], cursor: 0, shift: false, alpha: false, stoPending: false, historyIdx: null });
 }

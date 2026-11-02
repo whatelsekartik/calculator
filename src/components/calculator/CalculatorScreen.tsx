@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useMemo, useRef } from "react";
-import { CalcState, MODES, tokensToSource, shapeTokens } from "@/lib/calculator/session";
+import { CalcState, MODES, ModeId, tokensToSource, shapeTokens } from "@/lib/calculator/session";
 import { parseTokens } from "@/lib/calculator/parser";
 import { astToNodes, DNode } from "@/lib/calculator/display";
 import { valueToNodes, valueToText } from "@/lib/calculator/format";
@@ -36,6 +36,49 @@ export function CalculatorScreen({
 }) {
   const inputRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const overlayOpen = Boolean(overlay);
+
+  useEffect(() => {
+    if (!overlayOpen) {
+      const previous = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (previous?.isConnected) previous.focus();
+      return;
+    }
+
+    const root = overlayRef.current;
+    if (!root) return;
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const getFocusable = () => Array.from(root.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+    ));
+    getFocusable()[0]?.focus({ preventScroll: true });
+
+    const keepFocusInside = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const items = getFocusable();
+      if (items.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    root.addEventListener("keydown", keepFocusInside);
+    return () => root.removeEventListener("keydown", keepFocusInside);
+  }, [overlayOpen]);
 
   const inputNodes = useMemo(() => {
     if (state.tokens.length === 0) return [] as DNode[];
@@ -71,7 +114,8 @@ export function CalculatorScreen({
     if (rl) rl.scrollLeft = rl.scrollWidth;
   }, [state.version]);
 
-  const modeName = MODES.find((m) => m.id === state.mode)?.name ?? "";
+  const extraModeNames: Partial<Record<ModeId, string>> = { ineq: "INEQ", dist: "DIST", ratio: "RATIO", mathbox: "MATH BOX" };
+  const modeName = MODES.find((m) => m.id === state.mode)?.name ?? extraModeNames[state.mode] ?? state.mode.toUpperCase();
   const s = state.settings;
   const fmtBadge =
     s.eng ? "ENG" :
@@ -82,7 +126,7 @@ export function CalculatorScreen({
 
   return (
     <div className="calc-screen" role="application" aria-label="Calculator display">
-      <div className="calc-statusrow" aria-hidden="true">
+      <div className="calc-statusrow" role="status" aria-label="Calculator status">
         <span className="calc-badge">{modeName.toUpperCase().slice(0, 6)}</span>
         <span className="calc-badge">{s.angle.toUpperCase()}</span>
         <span className="calc-badge">{fmtBadge}</span>
@@ -94,7 +138,7 @@ export function CalculatorScreen({
       </div>
 
       {overlay ? (
-        <div className="calc-overlay">{overlay}</div>
+        <div ref={overlayRef} className="calc-overlay" role="dialog" aria-modal="true" aria-label="Calculator panel">{overlay}</div>
       ) : state.error ? (
         <div className="calc-errorline" aria-live="assertive">
           <div className="calc-error-code">
