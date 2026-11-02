@@ -324,9 +324,31 @@ export function loadState(): (Partial<CalcState> & { statsData?: StatsData; tabl
     );
     const history = Array.isArray(p.history)
       ? p.history.filter((h) =>
-          isRecord(h) && typeof h.id === "number" && typeof h.exprText === "string" &&
-          Array.isArray(h.toks) && isRecord(h.result) && typeof h.result.kind === "string",
-        ).map((h) => ({ ...h, result: deserializeValue(h.result) }))
+          isRecord(h) && Number.isSafeInteger(h.id) && Number(h.id) >= 0 &&
+          typeof h.exprText === "string" && Array.isArray(h.toks) &&
+          isRecord(h.result) && typeof h.result.kind === "string",
+        ).map((h) => {
+          const savedSettings = isRecord(h.settings) ? h.settings : null;
+          const restoredSettings = savedSettings
+            ? {
+                ...DEFAULT_SETTINGS,
+                ...savedSettings,
+                numFormat: {
+                  ...DEFAULT_SETTINGS.numFormat,
+                  ...(isRecord(savedSettings.numFormat) ? savedSettings.numFormat : {}),
+                },
+              } as CalcSettings
+            : undefined;
+          const savedRadix = ["dec", "hex", "oct", "bin"].includes(String(h.basenRadix))
+            ? h.basenRadix as Radix
+            : undefined;
+          return {
+            ...h,
+            result: deserializeValue(h.result as SerValue),
+            settings: restoredSettings,
+            basenRadix: savedRadix,
+          };
+        })
       : [];
     historySeq = Math.max(historySeq, ...history.map((h) => h.id + 1));
     return {
