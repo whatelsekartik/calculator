@@ -6,6 +6,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createRoot, Root } from "react-dom/client";
 import { act, createElement } from "react";
 import { ScientificCalculator } from "@/components/calculator/ScientificCalculator";
+import { loadState } from "../session";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -117,5 +118,192 @@ describe("on-screen keypad → screen", () => {
     expect(menu).not.toBeNull();
     pressKeyboard("Escape");
     expect(container.querySelector(".calc-overlay")).toBeNull();
+  });
+});
+
+
+function buttonByText(label: string, scope = ".calc-device"): HTMLButtonElement {
+  const parent = container.querySelector(scope) ?? container;
+  const button = Array.from(parent.querySelectorAll<HTMLButtonElement>("button"))
+    .find((item) => item.textContent?.trim() === label);
+  if (!button) throw new Error(`button not found: ${label}`);
+  return button;
+}
+
+function clickText(label: string, scope = ".calc-device") {
+  const button = buttonByText(label, scope);
+  act(() => button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+}
+
+function pointerDownText(label: string, scope = ".calc-overlay") {
+  const button = buttonByText(label, scope);
+  act(() => button.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true })));
+}
+
+function clickChip(label: string) {
+  const chip = Array.from(container.querySelectorAll<HTMLButtonElement>(".calc-chip"))
+    .find((item) => item.textContent?.trim() === label);
+  if (!chip) throw new Error(`calculator chip not found: ${label}`);
+  act(() => chip.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true })));
+}
+
+function fillInput(ariaLabel: string, value: string) {
+  const input = container.querySelector<HTMLInputElement>(`input[aria-label="${ariaLabel}"]`);
+  if (!input) throw new Error(`input not found: ${ariaLabel}`);
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  act(() => {
+    setter?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+}
+
+describe("mobile-first mode and setup controls", () => {
+  it("keeps every calculator app directly selectable without opening the MODE overlay", () => {
+    const modes = ["COMP", "CMPLX", "STAT", "BASE-N", "EQN", "MATRIX", "TABLE", "VECTOR"];
+    for (const mode of modes) {
+      clickText(mode, ".calc-mode-strip");
+      expect(container.querySelector(".calc-statusrow")?.textContent).toContain(mode);
+      expect(container.querySelector(".calc-overlay")).toBeNull();
+    }
+  });
+
+  it("opens SETUP from the visible strip and persists DEG/RAD selection", () => {
+    clickText("SETUP", ".calc-mode-strip");
+    expect(container.querySelector(".calc-overlay")?.textContent).toContain("SETTINGS");
+    pointerDownText("RAD");
+    expect(loadState()?.settings?.angle).toBe("rad");
+    pointerDownText("DEG");
+    expect(loadState()?.settings?.angle).toBe("deg");
+    pressKeyboard("Escape");
+    expect(container.querySelector(".calc-overlay")).toBeNull();
+  });
+
+  it("SHIFT + physical MODE opens SETUP and consumes the SHIFT modifier", () => {
+    clickKey("Shift: access yellow secondary functions");
+    expect(container.querySelector(".calc-badge.active")).not.toBeNull();
+    clickKey("Mode / Setup");
+    expect(container.querySelector(".calc-overlay")?.textContent).toContain("SETTINGS");
+    expect(container.querySelector(".calc-statusrow .calc-badge.active")).toBeNull();
+    pressKeyboard("Escape");
+  });
+});
+
+describe("scientific calculation acceptance through the physical keypad", () => {
+  it("evaluates exact fractions, roots and logarithms", () => {
+    clickKey("All clear");
+    ["One", "Divide", "Three", "Execute calculation"].forEach(clickKey);
+    expect(container.querySelector(".calc-resultline .dn-frac")).not.toBeNull();
+
+    clickKey("All clear");
+    ["Square root template", "Eight", "One", "Execute calculation"].forEach(clickKey);
+    expect(resultText()).toBe("9");
+
+    clickKey("All clear");
+    ["Common logarithm", "One", "Zero", "Zero", "Execute calculation"].forEach(clickKey);
+    expect(resultText()).toBe("2");
+  });
+
+  it("evaluates DEG and RAD trigonometry, including inverse sine", () => {
+    clickText("SETUP", ".calc-mode-strip");
+    pointerDownText("DEG");
+    pressKeyboard("Escape");
+    clickKey("All clear");
+    ["Sine", "Three", "Zero", "Execute calculation"].forEach(clickKey);
+    expect(Number(resultText())).toBeCloseTo(0.5, 10);
+
+    clickText("SETUP", ".calc-mode-strip");
+    pointerDownText("RAD");
+    pressKeyboard("Escape");
+    clickKey("All clear");
+    ["Sine", "Three", "Zero", "Execute calculation"].forEach(clickKey);
+    expect(Number(resultText())).toBeCloseTo(Math.sin(30), 9);
+
+    clickKey("All clear");
+    clickKey("Shift: access yellow secondary functions");
+    clickKey("Sine"); // SHIFT + sin = asin
+    ["Decimal point", "Five", "Execute calculation"].forEach(clickKey);
+    expect(Number(resultText())).toBeCloseTo(Math.asin(0.5), 9);
+    expect(loadState()?.settings?.angle).toBe("rad");
+  });
+});
+
+describe("advanced mode workflows", () => {
+  it("saves a matrix in the editor and evaluates its determinant", () => {
+    clickText("MATRIX", ".calc-mode-strip");
+    clickText("✎ EDIT");
+    fillInput("MatA row 1 column 1", "1");
+    fillInput("MatA row 1 column 2", "2");
+    fillInput("MatA row 2 column 1", "3");
+    fillInput("MatA row 2 column 2", "4");
+    pointerDownText("Save MatA");
+    expect(container.querySelector(".calc-overlay")).toBeNull();
+
+    clickChip("det(");
+    clickChip("MatA");
+    clickKey("Close parenthesis");
+    clickKey("Execute calculation");
+    expect(Number(resultText())).toBe(-2);
+  });
+
+  it("saves a vector and evaluates its magnitude", () => {
+    clickText("VECTOR", ".calc-mode-strip");
+    clickText("✎ EDIT");
+    fillInput("component 1", "1");
+    fillInput("component 2", "2");
+    fillInput("component 3", "3");
+    pointerDownText("Save VctA");
+    clickKey("Shift: access yellow secondary functions");
+    clickKey("Negative sign"); // SHIFT + (−) = abs(
+    clickChip("VctA");
+    clickKey("Close parenthesis");
+    clickKey("Execute calculation");
+    expect(Number(resultText())).toBeCloseTo(Math.sqrt(14), 8);
+  });
+
+  it("solves a simultaneous equation system and computes STAT results", () => {
+    clickText("EQN", ".calc-mode-strip");
+    fillInput("equation 1 coefficient x", "2");
+    fillInput("equation 1 coefficient y", "1");
+    fillInput("equation 1 constant", "5");
+    fillInput("equation 2 coefficient x", "1");
+    fillInput("equation 2 coefficient y", "-1");
+    fillInput("equation 2 constant", "1");
+    pointerDownText("Solve");
+    const equationOutput = container.querySelector(".calc-overlay-body")?.textContent ?? "";
+    expect(equationOutput).toContain("x = 2");
+    expect(equationOutput).toContain("y = 1");
+
+    clickText("STAT", ".calc-mode-strip");
+    fillInput("row 1 x", "1");
+    fillInput("row 2 x", "2");
+    fillInput("row 3 x", "3");
+    pointerDownText("Results");
+    const statsOutput = container.querySelector(".calc-overlay-body")?.textContent ?? "";
+    expect(statsOutput).toContain("x̄ mean");
+    expect(statsOutput).toContain("2");
+  });
+});
+
+describe("keyboard, touch-style controls and persisted state", () => {
+  it("supports cursor insertion from the physical keyboard", () => {
+    clickText("COMP", ".calc-mode-strip");
+    clickKey("All clear");
+    pressKeyboard("1");
+    pressKeyboard("3");
+    pressKeyboard("ArrowLeft");
+    pressKeyboard("2");
+    pressKeyboard("Enter");
+    expect(resultText()).toBe("123");
+  });
+
+  it("keeps the mobile mode buttons operable through pointer-generated clicks", () => {
+    const button = buttonByText("CMPLX", ".calc-mode-strip");
+    act(() => {
+      button.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true }));
+      button.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, cancelable: true }));
+      button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector(".calc-statusrow")?.textContent).toContain("CMPLX");
   });
 });
