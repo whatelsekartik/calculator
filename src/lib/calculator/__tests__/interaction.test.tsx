@@ -232,7 +232,7 @@ describe("scientific calculation acceptance through the physical keypad", () => 
 describe("advanced mode workflows", () => {
   it("saves a matrix in the editor and evaluates its determinant", () => {
     clickText("MATRIX", ".calc-mode-strip");
-    clickText("✎ EDIT");
+    pointerDownText("✎ EDIT", ".calc-device");
     fillInput("MatA row 1 column 1", "1");
     fillInput("MatA row 1 column 2", "2");
     fillInput("MatA row 2 column 1", "3");
