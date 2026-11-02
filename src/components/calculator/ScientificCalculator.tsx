@@ -358,7 +358,10 @@ export function ScientificCalculator() {
         <button
           type="button"
           className="calc-mode-option calc-mode-setup"
-          onClick={() => setOverlay((o) => (o === "settings" ? null : "settings"))}
+          onClick={() => {
+            setState((s) => s.shift ? pressKey(s, "shift") : s.alpha ? pressKey(s, "alpha") : s);
+            setOverlay((o) => (o === "settings" ? null : "settings"));
+          }}
         >
           SETUP
         </button>
