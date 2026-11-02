@@ -8,7 +8,8 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { CalcState, CalcSettings } from "@/lib/calculator/session";
+import { CalcState, CalcSettings, StatsData, TableCfg } from "@/lib/calculator/session";
+export type { StatsData, TableCfg } from "@/lib/calculator/session";
 import { realToText, valueToText } from "@/lib/calculator/format";
 import { cxVal, Value } from "@/lib/calculator/core";
 import { solveLinearSystem, polynomialRoots, solveInequality, solveNewton, IneqSense } from "@/lib/calculator/solvers";
@@ -254,12 +255,6 @@ export function VectorEditor({
 
 /* ========================== STATISTICS ========================== */
 
-export interface StatsData {
-  twoVar: boolean;
-  freqOn: boolean;
-  rows: { x: string; y: string; f: string }[];
-}
-
 export const emptyStats = (): StatsData => ({
   twoVar: false,
   freqOn: false,
@@ -490,14 +485,6 @@ export function StatsEditor({
 }
 
 /* ============================= TABLE ============================ */
-
-export interface TableCfg {
-  f: string;
-  g: string;
-  start: string;
-  end: string;
-  step: string;
-}
 
 export const emptyTable = (): TableCfg => ({ f: "", g: "", start: "-1", end: "1", step: "0.5" });
 
