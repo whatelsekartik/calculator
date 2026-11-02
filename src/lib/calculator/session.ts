@@ -682,18 +682,18 @@ function replay(s: CalcState, dir: -1 | 1): CalcState {
   if (idx < 0 || idx >= s.history.length) return s; // stop at ends
   const entry = s.history[idx];
   const tokens = editorTokens(entry.toks);
-  return pushIntoEditing(s, tokens, idx);
+  return pushIntoEditing(s, tokens, idx, entry.mode);
 }
 
-function pushIntoEditing(s: CalcState, tokens: Tok[], idx: number | null): CalcState {
-  const st = pushUndo({ ...s, result: null, error: null, historyIdx: idx });
-  return bump({ ...st, tokens, cursor: tokens.length, stoPending: false, flash: null });
+function pushIntoEditing(s: CalcState, tokens: Tok[], idx: number | null, mode: ModeId = s.mode): CalcState {
+  const st = pushUndo({ ...s, mode, result: null, error: null, historyIdx: idx });
+  return bump({ ...st, mode, tokens, cursor: tokens.length, stoPending: false, flash: null });
 }
 
-/** replay a specific history entry into the editing line */
+/** replay a specific history entry into the editing line and its original mode. */
 export function replayEntry(s: CalcState, entry: HistoryEntry): CalcState {
   const idx = s.history.findIndex((h) => h.id === entry.id);
-  return pushIntoEditing(s, editorTokens(entry.toks), idx === -1 ? null : idx);
+  return pushIntoEditing(s, editorTokens(entry.toks), idx === -1 ? null : idx, entry.mode);
 }
 
 export function clearVars(s: CalcState): CalcState {
