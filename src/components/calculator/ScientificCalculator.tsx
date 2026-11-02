@@ -7,7 +7,7 @@ import {
   CalcState, initialState, loadState, saveState, pressKey, insertTokens,
   setMode, setAngleUnit, updateSettings, clearHistory as clearHistoryAction,
   clearVars, clearMatricesVectors, replayEntry, setMatrix, setVector, setBasenRadix,
-  CalcSettings, ModeId, HistoryEntry, MODES,
+  CalcSettings, ModeId, HistoryEntry, MODES, StatsData, TableCfg,
 } from "@/lib/calculator/session";
 import { tokenize, tok, Tok } from "@/lib/calculator/parser";
 import { formatBase, groupBin, Radix } from "@/lib/calculator/basen";
@@ -19,7 +19,7 @@ import { CalculatorKeypad } from "./CalculatorKeypad";
 import { HomeMenu, SettingsPanel, CatalogPanel, HistoryPanel, ToolsPanel, HelpPanel, CalcActions } from "./Overlays";
 import {
   MatrixEditor, VectorEditor, StatsEditor, TableEditor, EquationEditor, IneqEditor,
-  DistEditor, RatioEditor, MathBoxEditor, StatsData, TableCfg, emptyStats, emptyTable,
+  DistEditor, RatioEditor, MathBoxEditor, emptyStats, emptyTable,
 } from "./Editors";
 
 type OverlayId =
@@ -30,21 +30,20 @@ type OverlayId =
 const EDITOR_MODES: ModeId[] = ["stats", "table", "equation", "ineq", "dist", "ratio", "mathbox"];
 
 export function ScientificCalculator() {
-  // SSR-disabled at the page level, so we can hydrate from localStorage here
+  // SSR-disabled at the page level, so hydrate all durable calculator state once.
+  const [persisted] = useState(() => (typeof window === "undefined" ? null : loadState()));
   const [state, setState] = useState<CalcState>(() => {
     const base = initialState();
-    if (typeof window === "undefined") return base;
-    const saved = loadState();
-    return saved ? { ...base, ...saved } : base;
+    return persisted ? { ...base, ...persisted } : base;
   });
   const [overlay, setOverlay] = useState<OverlayId>(null);
-  const [statsData, setStatsData] = useState<StatsData>(emptyStats);
-  const [tableCfg, setTableCfg] = useState<TableCfg>(emptyTable);
+  const [statsData, setStatsData] = useState<StatsData>(() => persisted?.statsData ?? emptyStats());
+  const [tableCfg, setTableCfg] = useState<TableCfg>(() => persisted?.tableCfg ?? emptyTable());
 
-  // persist whenever state changes
+  // Persist calculator state and editor drafts together.
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    saveState(state, { statsData, tableCfg });
+  }, [state, statsData, tableCfg]);
 
   const haptic = useCallback(() => {
     if (state.settings.haptic && typeof navigator !== "undefined" && navigator.vibrate) {
@@ -103,26 +102,27 @@ export function ScientificCalculator() {
       setOverlay(null);
       setStatsData(emptyStats());
       setTableCfg(emptyTable());
+      setStatsData(emptyStats());
     },
     replayEntry: (e: HistoryEntry) => setState((s) => replayEntry(s, e)),
     openOverlay: (o: string | null) => setOverlay(o as OverlayId),
   }), [press]);
 
   const onMetal = useCallback((action: "menu" | "settings" | "catalog" | "tools" | "back" | "help") => {
-    // MODE/SETUP consumes the physical SHIFT modifier after opening its panel.
+    // MODE/SETUP consumes the physical SHIFT or ALPHA modifier after opening its panel.
     setState((s) => s.shift ? pressKey(s, "shift") : s.alpha ? pressKey(s, "alpha") : s);
     if (action === "back") {
-      setOverlay((o) => {
-        if (o !== null) return null;
-        return o;
-      });
-      if (overlay === null) {
+      if (overlay !== null) {
+        setOverlay(null);
+      } else if (EDITOR_MODES.includes(state.mode)) {
+        setState((s) => setMode(s, "calc"));
+      } else {
         setState((s) => pressKey(s, "ac"));
       }
       return;
     }
     setOverlay((o) => (o === action ? null : (action as OverlayId)));
-  }, [overlay]);
+  }, [overlay, state.mode]);
 
   /* ------------------------- physical keyboard ----------------------- */
 
@@ -157,7 +157,8 @@ export function ScientificCalculator() {
       if (blocked) {
         if (e.key === "Escape") {
           e.preventDefault();
-          setOverlay(null);
+          if (overlay !== null) setOverlay(null);
+          else if (EDITOR_MODES.includes(state.mode)) setState((s) => setMode(s, "calc"));
         }
         return;
       }
@@ -178,11 +179,11 @@ export function ScientificCalculator() {
       else if (k === "ArrowDown") setState((s) => pressKey(s, "nav-down"));
       else if (k === "x" || k === "X") setState((s) => insertTokens(s, [tok("var", "X")]));
       else if (k === "y" || k === "Y") setState((s) => insertTokens(s, [tok("var", "Y")]));
-      else if (/^[a-fA-F]$/.test(k) || k === "m" || k === "M") {
-        // variables / hex letters
+      else if (k === "e") setState((s) => insertTokens(s, [tok("const", "e")]));
+      else if (/^[A-F]$/.test(k) || k === "m" || k === "M") {
+        // Uppercase E enters the stored variable; lowercase e is Euler's constant.
         setState((s) => insertTokens(s, [tok("var", k.toUpperCase())]));
       } else if (k === "p" || k.toLowerCase() === "π") setState((s) => insertTokens(s, [tok("const", "pi")]));
-      else if (k === "e") setState((s) => insertTokens(s, [tok("const", "e")]));
       else {
         const id = keyIdForChar(k);
         if (id) setState((s) => pressKey(s, id));
@@ -264,7 +265,13 @@ export function ScientificCalculator() {
   /* ------------------------- overlay content ------------------------- */
 
   const overlayNode = (() => {
-    const close = () => setOverlay(null);
+    const close = () => {
+      if (overlay !== null) {
+        setOverlay(null);
+      } else if (EDITOR_MODES.includes(state.mode)) {
+        setState((s) => setMode(s, "calc"));
+      }
+    };
     if (overlay === "menu") return <HomeMenu act={act} onClose={close} />;
     if (overlay === "settings") return <SettingsPanel state={state} act={act} onClose={close} />;
     if (overlay === "catalog") return <CatalogPanel state={state} act={act} onClose={close} />;
@@ -358,7 +365,7 @@ export function ScientificCalculator() {
               className="calc-chip"
               aria-label={c2.aria}
               disabled={"hexOnly" in c2 && c2.hexOnly && state.basenRadix !== "hex"}
-              onPointerDown={(e) => {
+              onClick={(e) => {
                 e.preventDefault();
                 act.insertToks(c2.toks);
                 haptic();
@@ -369,13 +376,13 @@ export function ScientificCalculator() {
           ))}
           {state.mode === "matrix" && (
             <button type="button" className="calc-chip" aria-label="Edit matrices"
-              onPointerDown={(e) => { e.preventDefault(); setOverlay("matrix"); }}>
+              onClick={(e) => { e.preventDefault(); setOverlay("matrix"); }}>
               ✎ EDIT
             </button>
           )}
           {state.mode === "vector" && (
             <button type="button" className="calc-chip" aria-label="Edit vectors"
-              onPointerDown={(e) => { e.preventDefault(); setOverlay("vector"); }}>
+              onClick={(e) => { e.preventDefault(); setOverlay("vector"); }}>
               ✎ EDIT
             </button>
           )}
@@ -388,14 +395,14 @@ export function ScientificCalculator() {
                   className={`calc-chip ${state.basenRadix === r ? "chip-on" : ""}`}
                   aria-label={`${r} mode`}
                   aria-pressed={state.basenRadix === r}
-                  onPointerDown={(e) => { e.preventDefault(); setState((s) => setBasenRadix(s, r)); }}
+                  onClick={(e) => { e.preventDefault(); setState((s) => setBasenRadix(s, r)); }}
                 >
                   {r.toUpperCase()}
                 </button>
               ))}
               <span style={{ flex: 1 }} />
               <button type="button" className="calc-chip" aria-label="Toggle angle unit"
-                onPointerDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   const next = state.settings.angle === "deg" ? "rad" : state.settings.angle === "rad" ? "grad" : "deg";
                   setState((s) => setAngleUnit(s, next));
@@ -406,12 +413,12 @@ export function ScientificCalculator() {
           )}
           <span style={{ flex: 1 }} />
           <button type="button" className="calc-chip" aria-label="Keyboard shortcuts and help"
-            onPointerDown={(e) => { e.preventDefault(); setOverlay((o) => (o === "help" ? null : "help")); }}>
+            onClick={(e) => { e.preventDefault(); setOverlay((o) => (o === "help" ? null : "help")); }}>
             ?
           </button>
           {state.mode !== "basen" && (
             <button type="button" className="calc-chip" aria-label="History"
-              onPointerDown={(e) => { e.preventDefault(); setOverlay((o) => (o === "history" ? null : "history")); }}>
+              onClick={(e) => { e.preventDefault(); setOverlay((o) => (o === "history" ? null : "history")); }}>
               <Clock size={11} aria-hidden />
             </button>
           )}
