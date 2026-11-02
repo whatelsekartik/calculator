@@ -134,6 +134,19 @@ export function ScientificCalculator() {
     const isNativeActionTarget = (el: EventTarget | null): boolean =>
       el instanceof HTMLElement && Boolean(el.closest("button, a, [role='button']"));
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (overlay !== null) {
+          e.preventDefault();
+          setOverlay(null);
+        } else if (EDITOR_MODES.includes(state.mode)) {
+          e.preventDefault();
+          setState((s) => setMode(s, "calc"));
+        } else if (!isEditable(e.target)) {
+          e.preventDefault();
+          setState((s) => pressKey(s, "ac"));
+        }
+        return;
+      }
       if (isEditable(e.target)) return; // never steal text-entry focus
       if (e.ctrlKey || e.metaKey || e.altKey) {
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
@@ -154,20 +167,9 @@ export function ScientificCalculator() {
         }
         return;
       }
-      const blocked = overlay !== null || EDITOR_MODES.includes(state.mode);
-      if (e.key === "Escape") {
-        if (blocked) {
-          e.preventDefault();
-          if (overlay !== null) setOverlay(null);
-          else if (EDITOR_MODES.includes(state.mode)) setState((s) => setMode(s, "calc"));
-          return;
-        }
-        e.preventDefault();
-        setState((s) => pressKey(s, "ac"));
-        return;
-      }
       // Let focused buttons/links handle Enter and Space through their native click behaviour.
       if (isNativeActionTarget(e.target)) return;
+      const blocked = overlay !== null || EDITOR_MODES.includes(state.mode);
       if (blocked) return;
       const k = e.key;
       let handled = true;
