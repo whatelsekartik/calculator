@@ -141,14 +141,14 @@ function clickText(label: string, scope = ".calc-device") {
 
 function pointerDownText(label: string, scope = ".calc-overlay") {
   const button = buttonByText(label, scope);
-  act(() => button.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true })));
+  act(() => button.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
 }
 
 function clickChip(label: string) {
   const chip = Array.from(container.querySelectorAll<HTMLButtonElement>(".calc-chip"))
     .find((item) => item.textContent?.trim() === label);
   if (!chip) throw new Error(`calculator chip not found: ${label}`);
-  act(() => chip.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true })));
+  act(() => chip.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
 }
 
 function fillInput(ariaLabel: string, value: string) {
@@ -288,6 +288,47 @@ describe("advanced mode workflows", () => {
     const statsOutput = container.querySelector(".calc-overlay-body")?.textContent ?? "";
     expect(statsOutput).toContain("x̄ mean");
     expect(statsOutput).toContain("2");
+  });
+});
+
+describe("editor exit and semantic button activation", () => {
+  it("returns from full-screen STAT editor to COMP using its close control", () => {
+    clickText("STAT", ".calc-mode-strip");
+    expect(container.querySelector(".calc-overlay")).not.toBeNull();
+    clickKey("Back to calculation");
+    expect(container.querySelector(".calc-overlay")).toBeNull();
+    expect(container.querySelector(".calc-statusrow")?.textContent).toContain("COMP");
+  });
+
+  it("returns from TABLE editor to COMP using Escape", () => {
+    clickText("TABLE", ".calc-mode-strip");
+    expect(container.querySelector(".calc-overlay")).not.toBeNull();
+    pressKeyboard("Escape");
+    expect(container.querySelector(".calc-overlay")).toBeNull();
+    expect(container.querySelector(".calc-statusrow")?.textContent).toContain("COMP");
+  });
+
+  it("activates settings options from click/keyboard-style button activation", () => {
+    clickText("SETUP", ".calc-mode-strip");
+    clickText("RAD", ".calc-overlay");
+    expect(loadState()?.settings?.angle).toBe("rad");
+    clickText("DEG", ".calc-overlay");
+    expect(loadState()?.settings?.angle).toBe("deg");
+    pressKeyboard("Escape");
+  });
+});
+
+describe("physical keyboard constants and variables", () => {
+  it("maps lowercase e to Euler's constant and uppercase E to variable E", () => {
+    clickText("COMP", ".calc-mode-strip");
+    clickKey("All clear");
+    pressKeyboard("e");
+    pressKeyboard("Enter");
+    expect(numericResult()).toBeCloseTo(Math.E, 10);
+
+    clickKey("All clear");
+    pressKeyboard("E");
+    expect(inputText()).toContain("E");
   });
 });
 
