@@ -155,6 +155,15 @@ describe("history & replay", () => {
 });
 
 describe("modes & settings", () => {
+  it("reselecting the active mode preserves the current expression and cursor", () => {
+    let s = typeKeys(initialState(), ["d1", "add", "d2"]);
+    const before = { tokens: s.tokens, cursor: s.cursor, version: s.version };
+    s = setMode(s, "calc");
+    expect(s.tokens).toEqual(before.tokens);
+    expect(s.cursor).toBe(before.cursor);
+    expect(s.version).toBe(before.version);
+  });
+
   it("angle unit switch changes subsequent trig", () => {
     let s = typeKeys(initialState(), ["sin", "d3", "d0", "exe"]);
     expect(resultReal(s)).toBe(0.5);
