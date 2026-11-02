@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useMemo, useRef } from "react";
-import { CalcState, MODES, tokensToSource, shapeTokens } from "@/lib/calculator/session";
+import { CalcState, MODES, ModeId, tokensToSource, shapeTokens } from "@/lib/calculator/session";
 import { parseTokens } from "@/lib/calculator/parser";
 import { astToNodes, DNode } from "@/lib/calculator/display";
 import { valueToNodes, valueToText } from "@/lib/calculator/format";
@@ -114,7 +114,8 @@ export function CalculatorScreen({
     if (rl) rl.scrollLeft = rl.scrollWidth;
   }, [state.version]);
 
-  const modeName = MODES.find((m) => m.id === state.mode)?.name ?? "";
+  const extraModeNames: Partial<Record<ModeId, string>> = { ineq: "INEQ", dist: "DIST", ratio: "RATIO", mathbox: "MATH BOX" };
+  const modeName = MODES.find((m) => m.id === state.mode)?.name ?? extraModeNames[state.mode] ?? state.mode.toUpperCase();
   const s = state.settings;
   const fmtBadge =
     s.eng ? "ENG" :
@@ -125,7 +126,7 @@ export function CalculatorScreen({
 
   return (
     <div className="calc-screen" role="application" aria-label="Calculator display">
-      <div className="calc-statusrow" aria-hidden="true">
+      <div className="calc-statusrow" role="status" aria-label="Calculator status">
         <span className="calc-badge">{modeName.toUpperCase().slice(0, 6)}</span>
         <span className="calc-badge">{s.angle.toUpperCase()}</span>
         <span className="calc-badge">{fmtBadge}</span>
