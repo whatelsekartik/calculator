@@ -311,6 +311,28 @@ describe("mode strip and table input safeguards", () => {
   });
 });
 
+describe("modal accessibility and focus handling", () => {
+  it("opens a semantic dialog, moves focus inside, and traps keyboard focus", () => {
+    clickText("SETUP", ".calc-mode-strip");
+    const dialog = container.querySelector<HTMLElement>('.calc-overlay[role="dialog"][aria-modal="true"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog?.contains(document.activeElement)).toBe(true);
+
+    const focusable = Array.from(dialog!.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+    ));
+    expect(focusable.length).toBeGreaterThan(1);
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    act(() => {
+      last.focus();
+      last.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    });
+    expect(document.activeElement).toBe(first);
+    pressKeyboard("Escape");
+  });
+});
+
 describe("editor exit and semantic button activation", () => {
   it("returns from full-screen STAT editor to COMP using its close control", () => {
     clickText("STAT", ".calc-mode-strip");
