@@ -45,6 +45,10 @@ function pressKeyboard(key: string) {
 const resultText = () =>
   container.querySelector(".calc-resultline")?.textContent ?? "";
 
+// Calculator LCD typography uses a mathematical minus (−), which Number()
+// does not parse. Normalize only the display glyph before numeric assertions.
+const numericResult = () => Number(resultText().replace(/−/g, "-").replace(/,/g, ""));
+
 const inputText = () => container.querySelector(".calc-inputline")?.textContent ?? "";
 
 describe("on-screen keypad → screen", () => {
@@ -212,20 +216,20 @@ describe("scientific calculation acceptance through the physical keypad", () => 
     pressKeyboard("Escape");
     clickKey("All clear");
     ["Sine", "Three", "Zero", "Execute calculation"].forEach(clickKey);
-    expect(Number(resultText())).toBeCloseTo(0.5, 10);
+    expect(numericResult()).toBeCloseTo(0.5, 10);
 
     clickText("SETUP", ".calc-mode-strip");
     pointerDownText("RAD");
     pressKeyboard("Escape");
     clickKey("All clear");
     ["Sine", "Three", "Zero", "Execute calculation"].forEach(clickKey);
-    expect(Number(resultText())).toBeCloseTo(Math.sin(30), 9);
+    expect(numericResult()).toBeCloseTo(Math.sin(30), 9);
 
     clickKey("All clear");
     clickKey("Shift: access yellow secondary functions");
     clickKey("Sine"); // SHIFT + sin = asin
     ["Decimal point", "Five", "Execute calculation"].forEach(clickKey);
-    expect(Number(resultText())).toBeCloseTo(Math.asin(0.5), 9);
+    expect(numericResult()).toBeCloseTo(Math.asin(0.5), 9);
     expect(loadState()?.settings?.angle).toBe("rad");
   });
 });
@@ -245,7 +249,7 @@ describe("advanced mode workflows", () => {
     clickChip("MatA");
     clickKey("Close parenthesis");
     clickKey("Execute calculation");
-    expect(Number(resultText())).toBe(-2);
+    expect(numericResult()).toBe(-2);
   });
 
   it("saves a vector and evaluates its magnitude", () => {
@@ -260,7 +264,7 @@ describe("advanced mode workflows", () => {
     clickChip("VctA");
     clickKey("Close parenthesis");
     clickKey("Execute calculation");
-    expect(Number(resultText())).toBeCloseTo(Math.sqrt(14), 8);
+    expect(numericResult()).toBeCloseTo(Math.sqrt(14), 8);
   });
 
   it("solves a simultaneous equation system and computes STAT results", () => {
