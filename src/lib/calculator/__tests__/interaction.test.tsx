@@ -364,6 +364,18 @@ describe("editor exit and semantic button activation", () => {
     expect(container.querySelector(".calc-statusrow")?.textContent).toContain("COMP");
   });
 
+  it("Escape closes an editor even while a text field has focus", () => {
+    clickText("TABLE", ".calc-mode-strip");
+    const input = container.querySelector<HTMLInputElement>('input[aria-label="f(x) ="]');
+    expect(input).not.toBeNull();
+    act(() => {
+      input!.focus();
+      input!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    });
+    expect(container.querySelector(".calc-overlay")).toBeNull();
+    expect(container.querySelector(".calc-statusrow")?.textContent).toContain("COMP");
+  });
+
   it("activates settings options from click/keyboard-style button activation", () => {
     clickText("SETUP", ".calc-mode-strip");
     clickText("RAD", ".calc-overlay");
